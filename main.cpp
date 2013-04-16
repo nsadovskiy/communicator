@@ -1,14 +1,22 @@
 /**
  *
  * Компиляция: 
- *    g++ -std=c++0x -O2 -Wall main.cpp -I/home/sns/include/boost-1_53/ -L/home/sns/lib/ -lboost_system-gcc47-mt-sd-1_53 -o bin/main
+ *     g++ -std=c++0x -O2 -Wall main.cpp server.cpp -I/home/sns/include/boost-1_53/ -L/home/sns/lib/ -lboost_system-gcc47-mt-sd-1_53 -pthread -o bin/main
  **/
 #include <locale>
 #include <iostream>
+#include <exception>
 #include <boost/asio.hpp>
+#include <boost/lexical_cast.hpp>
 
+#include "server.hpp"
+
+using std::endl;
+using std::cerr;
 using std::wcerr;
 using std::wcout;
+using std::exception;
+using boost::lexical_cast;
 
 int main(int argc, const char * argv[]) {
 
@@ -36,4 +44,13 @@ int main(int argc, const char * argv[]) {
         wcerr << L"  communicator 0.0.0.0 4010 4\n";
         exit(1);
     }
+
+    try {
+        server_t server(argv[1], argv[2], lexical_cast<size_t>(argv[3]));
+        server.run();
+
+    } catch (const exception & e) {
+        cerr << "[ERROR] " << e.what() << endl;
+    }
+    
 }
