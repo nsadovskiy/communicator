@@ -3,9 +3,13 @@
  *
  **/
 #include <iostream>
+#include <boost/shared_ptr.hpp>
 #include "server.hpp"
 
+using std::cout;
 using std::wcout;
+using boost::shared_ptr;
+using boost::asio::ip::tcp;
 using boost::system::error_code;
 
 /**
@@ -27,6 +31,16 @@ server_t::server_t(const char * bind_addr, const char * port, size_t num_workers
             this->handle_stop();
         }
     );
+
+    tcp::resolver resolver(io_service_);
+    tcp::resolver::query query(bind_addr, port);
+    tcp::endpoint endpoint = *resolver.resolve(query);
+    acceptor_.open(endpoint.protocol());
+    acceptor_.set_option(tcp::acceptor::reuse_address(true));
+    acceptor_.bind(endpoint);
+    acceptor_.listen();
+
+    start_accept();
 }
 
 /**
@@ -41,7 +55,41 @@ void server_t::run() {
  *
  *
  **/
+void server_t::start_accept() {
+
+    shared_ptr<tcp::socket> socket_(new tcp::socket(io_service_));
+    acceptor_.async_accept(
+        *socket_,
+        [this](const error_code & error) {
+            this->handle_accept(error);
+        }
+    );
+}
+
+/**
+ *
+ *
+ **/
 void server_t::handle_stop() {
     io_service_.stop();
     wcout << L"Bye!\n";
+}
+
+/**
+ *
+ *
+ **/
+void server_t::handle_accept(const boost::system::error_code & error/*, boost::asio::ip::tcp::socket & socket*/) {
+
+    wcout << L"Connection accepted\n";
+
+    if (!acceptor_.is_open()) {
+        return;
+    }
+
+    if (!error) {
+        // Do something ...
+    }
+
+    start_accept();
 }

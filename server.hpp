@@ -18,6 +18,8 @@ public:
 
 private:
     void handle_stop();
+    void handle_accept(const boost::system::error_code & error/*, boost::asio::ip::tcp::socket & socket*/);
+    void start_accept();
 
 private:
     size_t num_workers_;
