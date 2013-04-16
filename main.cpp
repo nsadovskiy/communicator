@@ -1,7 +1,7 @@
 /**
  *
- * Компиляция: 
- *     g++ -std=c++0x -O2 -Wall main.cpp server.cpp -I/home/sns/include/boost-1_53/ -L/home/sns/lib/ -lboost_system-gcc47-mt-sd-1_53 -pthread -o bin/main
+ * Компиляция:
+ *     g++ -std=c++0x -O2 -Wall main.cpp server.cpp client.cpp -I/home/sns/include/boost-1_53/ -L/home/sns/lib/ -lboost_system-gcc47-mt-sd-1_53 -pthread -o bin/main
  **/
 #include <locale>
 #include <iostream>

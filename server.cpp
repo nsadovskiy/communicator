@@ -3,8 +3,8 @@
  *
  **/
 #include <iostream>
-#include <boost/shared_ptr.hpp>
 #include "server.hpp"
+#include "client.hpp"
 
 using std::cout;
 using std::wcout;
@@ -25,7 +25,7 @@ server_t::server_t(const char * bind_addr, const char * port, size_t num_workers
     signals_.add(SIGTERM);
 #if defined(SIGQUIT)
     signals_.add(SIGQUIT);
-#endif // defined(SIGQUIT)
+#endif
     signals_.async_wait(
         [this](const error_code &, const int &) {
             this->handle_stop();
@@ -57,11 +57,11 @@ void server_t::run() {
  **/
 void server_t::start_accept() {
 
-    shared_ptr<tcp::socket> socket_(new tcp::socket(io_service_));
+    client_type client(client_t::create(io_service_, nullptr));
     acceptor_.async_accept(
-        *socket_,
-        [this](const error_code & error) {
-            this->handle_accept(error);
+        client->get_socket(),
+        [this, client](const error_code & error) {
+            this->handle_accept(error, client);
         }
     );
 }
@@ -79,7 +79,7 @@ void server_t::handle_stop() {
  *
  *
  **/
-void server_t::handle_accept(const boost::system::error_code & error/*, boost::asio::ip::tcp::socket & socket*/) {
+void server_t::handle_accept(const boost::system::error_code & error, client_type client) {
 
     wcout << L"Connection accepted\n";
 
@@ -88,7 +88,8 @@ void server_t::handle_accept(const boost::system::error_code & error/*, boost::a
     }
 
     if (!error) {
-        // Do something ...
+        client->start();
+        clients_.push_back(client);
     }
 
     start_accept();
