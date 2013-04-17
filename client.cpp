@@ -99,7 +99,8 @@ void client_t::handle_read(const error_code & error, size_t len) {
                 )
             );
     } else if (error != operation_aborted) {
-        wcout << *this << L" Йа ашипко! Закрываемся.\n";
+        wcout << *this << L" [ERROR] " << error << L"\n";
+        wcout << *this << L" Закрываем соединение.\n";
         stop();
     }
 }
