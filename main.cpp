@@ -12,7 +12,6 @@
 #include "server.hpp"
 
 using std::endl;
-using std::cerr;
 using std::wcerr;
 using std::wcout;
 using std::exception;
@@ -50,7 +49,7 @@ int main(int argc, const char * argv[]) {
         server.run();
 
     } catch (const exception & e) {
-        cerr << "[ERROR] " << e.what() << endl;
+        wcerr << "[ERROR] " << e.what() << endl;
     }
     
 }

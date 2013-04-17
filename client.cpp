@@ -5,12 +5,9 @@
 #include <iostream>
 #include "client.hpp"
 
-using std::endl;
-using std::cout;
 using std::wcout;
 using std::basic_ostream;
 using boost::asio::buffer;
-using boost::asio::ip::tcp;
 using boost::asio::io_service;
 using boost::system::error_code;
 using boost::asio::error::operation_aborted;

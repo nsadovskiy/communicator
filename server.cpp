@@ -8,11 +8,9 @@
 #include "server.hpp"
 #include "client.hpp"
 
-using std::cout;
 using std::wcout;
 using std::distance;
 using std::remove_if;
-using boost::shared_ptr;
 using boost::asio::ip::tcp;
 using boost::system::error_code;
 using boost::posix_time::seconds;
