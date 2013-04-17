@@ -10,6 +10,7 @@
 
 using std::cout;
 using std::wcout;
+using std::distance;
 using std::remove_if;
 using boost::shared_ptr;
 using boost::asio::ip::tcp;
@@ -91,8 +92,8 @@ void server_t::handle_stop() {
  *
  *
  **/
-void server_t::handle_timer(const boost::system::error_code & error) {
-    wcout << L"Timer\n";
+void server_t::handle_timer(const error_code & error) {
+    // wcout << L"Timer\n";
     if (!error) {
         timer_.expires_at(timer_.expires_at() + seconds(interval_));
         timer_.async_wait(
@@ -109,7 +110,7 @@ void server_t::handle_timer(const boost::system::error_code & error) {
  *
  *
  **/
-void server_t::handle_accept(const boost::system::error_code & error, client_type client) {
+void server_t::handle_accept(const error_code & error, client_type client) {
 
     wcout << L"Connection accepted\n";
 
@@ -133,15 +134,17 @@ void server_t::handle_accept(const boost::system::error_code & error, client_typ
  *
  **/
 void server_t::drop_unused_clients() {
+
     lock_guard_type lock(mutex_);
-    clients_.erase(
-        remove_if(
+    auto pos = remove_if(
             clients_.begin(),
             clients_.end(),
-                [](const client_type & client) {
-                    return !client->get_socket().is_open();
-                }
-            ),
-        clients_.end()
+            [](const client_type & client) {
+                return !client->get_socket().is_open();
+            }
         );
+    if (pos != clients_.end()) {
+        wcout << L"Отключенных клиентов " << distance(pos, clients_.end()) << L". Удаляем.\n";
+        clients_.erase(pos, clients_.end());
+    }
 }
