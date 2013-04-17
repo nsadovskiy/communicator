@@ -3,23 +3,29 @@
  *
  **/
 #include <iostream>
+#include <algorithm>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include "server.hpp"
 #include "client.hpp"
 
 using std::cout;
 using std::wcout;
+using std::remove_if;
 using boost::shared_ptr;
 using boost::asio::ip::tcp;
 using boost::system::error_code;
+using boost::posix_time::seconds;
 
 /**
  *
  *
  **/
 server_t::server_t(const char * bind_addr, const char * port, size_t num_workers) :
+    interval_(5),
     num_workers_(num_workers),
     signals_(io_service_),
-    acceptor_(io_service_) {
+    acceptor_(io_service_),
+    timer_(io_service_, seconds(interval_)) {
 
     signals_.add(SIGINT);
     signals_.add(SIGTERM);
@@ -27,10 +33,16 @@ server_t::server_t(const char * bind_addr, const char * port, size_t num_workers
     signals_.add(SIGQUIT);
 #endif
     signals_.async_wait(
-        [this](const error_code &, const int &) {
-            this->handle_stop();
-        }
-    );
+            [this](const error_code &, const int &) {
+                this->handle_stop();
+            }
+        );
+
+    timer_.async_wait(
+            [this](const error_code & error) {
+                this->handle_timer(error);
+            }
+        );
 
     tcp::resolver resolver(io_service_);
     tcp::resolver::query query(bind_addr, port);
@@ -79,6 +91,24 @@ void server_t::handle_stop() {
  *
  *
  **/
+void server_t::handle_timer(const boost::system::error_code & error) {
+    wcout << L"Timer\n";
+    if (!error) {
+        timer_.expires_at(timer_.expires_at() + seconds(interval_));
+        timer_.async_wait(
+            [this](const error_code & error) {
+                this->handle_timer(error);
+            }
+        );
+
+        drop_unused_clients();
+    }
+}
+
+/**
+ *
+ *
+ **/
 void server_t::handle_accept(const boost::system::error_code & error, client_type client) {
 
     wcout << L"Connection accepted\n";
@@ -89,8 +119,29 @@ void server_t::handle_accept(const boost::system::error_code & error, client_typ
 
     if (!error) {
         client->start();
-        clients_.push_back(client);
+        {
+            lock_guard_type lock(mutex_);
+            clients_.push_back(client);
+        }
     }
 
     start_accept();
+}
+
+/**
+ *
+ *
+ **/
+void server_t::drop_unused_clients() {
+    lock_guard_type lock(mutex_);
+    clients_.erase(
+        remove_if(
+            clients_.begin(),
+            clients_.end(),
+                [](const client_type & client) {
+                    return !client->get_socket().is_open();
+                }
+            ),
+        clients_.end()
+        );
 }
