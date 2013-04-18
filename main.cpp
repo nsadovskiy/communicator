@@ -10,6 +10,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include "server.hpp"
+#include "omnicomm/protocol.hpp"
 
 using std::endl;
 using std::wcerr;
@@ -45,7 +46,7 @@ int main(int argc, const char * argv[]) {
     }
 
     try {
-        server_t server(argv[1], argv[2], lexical_cast<size_t>(argv[3]));
+        server_t server(argv[1], argv[2], lexical_cast<size_t>(argv[3]), omnicomm::protocol_t::create);
         server.run();
 
     } catch (const exception & e) {

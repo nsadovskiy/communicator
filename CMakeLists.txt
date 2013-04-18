@@ -8,10 +8,14 @@ FIND_PACKAGE(Boost 1.53 COMPONENTS system REQUIRED)
 SET(Boost_USE_STATIC_LIBS ON)
 SET(Boost_USE_MULTITHREADED ON)
 
-SET(SOURCES main.cpp
+SET(SOURCES ${SOURCES}
+    main.cpp
     server.cpp
     client.cpp
+    protocol_base.cpp
 )
+
+INCLUDE(omnicomm/CMakeLists.txt)
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
 

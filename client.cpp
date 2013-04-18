@@ -4,6 +4,7 @@
  **/
 #include <iostream>
 #include "client.hpp"
+#include "protocol_base.hpp"
 
 using std::wcout;
 using std::basic_ostream;
@@ -33,7 +34,7 @@ namespace {
  *
  *
  **/
-client_t::pointer_type client_t::create(io_service & io_service, base_protocol_t * impl) {
+client_t::pointer_type client_t::create(io_service & io_service, protocol_base_t * impl) {
     return pointer_type(new client_t(io_service, impl));
 }
 
@@ -41,7 +42,7 @@ client_t::pointer_type client_t::create(io_service & io_service, base_protocol_t
  *
  *
  **/
-client_t::client_t(io_service & io_service, base_protocol_t * impl) :
+client_t::client_t(io_service & io_service, protocol_base_t * impl) :
     impl_(impl),
     socket_(io_service),
     strand_(io_service) {
@@ -70,6 +71,7 @@ void client_t::start() {
                 }
             )
         );
+    impl_->init();
 }
 
 /**
@@ -86,8 +88,8 @@ void client_t::stop() {
  *
  **/
 void client_t::handle_read(const error_code & error, size_t len) {
-    wcout << *this << L" Прочитано " << len << L" байт\n";
     if (!error) {
+        wcout << *this << L" Прочитано " << len << L" байт\n";
         socket_.async_read_some(buffer(buffer_),
                 strand_.wrap(
                     [this](const error_code & error, size_t len) {
@@ -95,6 +97,7 @@ void client_t::handle_read(const error_code & error, size_t len) {
                     }
                 )
             );
+        impl_->recive();
     } else if (error != operation_aborted) {
         wcout << *this << L" [ERROR] " << error << L"\n";
         wcout << *this << L" Закрываем соединение.\n";

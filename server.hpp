@@ -16,8 +16,12 @@
  *
  **/
 class client_t;
+class protocol_base_t;
 
 class server_t {
+
+public:
+    typedef protocol_base_t * (*create_func_type)();
 
 private:
     typedef boost::shared_ptr<client_t> client_type;
@@ -25,7 +29,7 @@ private:
     typedef boost::lock_guard<boost::mutex> lock_guard_type;
 
 public:
-    server_t(const char * bind_addr, const char * port, size_t num_workers);
+    server_t(const char * bind_addr, const char * port, size_t num_workers, create_func_type create_func);
 
 public:
     void run();
@@ -40,6 +44,7 @@ private:
 private:
     size_t interval_;
     size_t num_workers_;
+    create_func_type create_client_func_;
     boost::mutex mutex_;
     boost::asio::io_service io_service_;
     boost::asio::signal_set signals_;

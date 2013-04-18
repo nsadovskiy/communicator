@@ -2,6 +2,7 @@
  *
  *
  **/
+#include <cassert>
 #include <iostream>
 #include <algorithm>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -19,12 +20,15 @@ using boost::posix_time::seconds;
  *
  *
  **/
-server_t::server_t(const char * bind_addr, const char * port, size_t num_workers) :
+server_t::server_t(const char * bind_addr, const char * port, size_t num_workers, create_func_type create_func) :
     interval_(5),
     num_workers_(num_workers),
+    create_client_func_(create_func),
     signals_(io_service_),
     acceptor_(io_service_),
     timer_(io_service_, seconds(interval_)) {
+
+    assert(create_client_func_);
 
     signals_.add(SIGINT);
     signals_.add(SIGTERM);
@@ -68,7 +72,9 @@ void server_t::run() {
  **/
 void server_t::start_accept() {
 
-    client_type client(client_t::create(io_service_, nullptr));
+    assert(create_client_func_);
+
+    client_type client(client_t::create(io_service_, create_client_func_()));
     acceptor_.async_accept(
         client->get_socket(),
         [this, client](const error_code & error) {
