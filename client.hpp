@@ -5,6 +5,7 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
+#include <vector>
 #include <boost/asio.hpp>
 #include <boost/array.hpp>
 #include <boost/noncopyable.hpp>
@@ -42,7 +43,8 @@ private:
 
 private:
     impl_type impl_;
-    boost::array<char, 8192> buffer_;
+    boost::array<char, 8192> async_buffer_;
+    std::vector<unsigned char> perm_buffer_;
     boost::asio::ip::tcp::socket socket_;
     boost::asio::io_service::strand strand_;
 };

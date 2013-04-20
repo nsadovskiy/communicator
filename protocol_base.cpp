@@ -45,7 +45,7 @@ void protocol_base_t::connect() {
  *
  *
  **/
-void protocol_base_t::recive() {
-    wcout << L"[" << this << L"][protocol_base_t][recive]\n";
-    recive_impl();
+void protocol_base_t::recive(const unsigned char * data, size_t len) {
+    wcout << L"[" << this << L"][protocol_base_t][recive] len=" << len << "\n";
+    recive_impl(data, len);
 }

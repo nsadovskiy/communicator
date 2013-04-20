@@ -5,6 +5,8 @@
 #ifndef BASE_PROTOCOL_HPP
 #define BASE_PROTOCOL_HPP
 
+#include <cstddef>
+
 /**
  *
  *
@@ -17,12 +19,12 @@ public:
 public:
     void init();
     void connect();
-    void recive();
+    void recive(const unsigned char * data, size_t len);
 
 private:
     virtual void init_impl() = 0;
     virtual void connect_impl() = 0;
-    virtual void recive_impl() = 0;
+    virtual void recive_impl(const unsigned char * data, size_t len) = 0;
 };
 
 /**

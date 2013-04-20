@@ -44,6 +44,7 @@ client_t::pointer_type client_t::create(io_service & io_service, protocol_base_t
  **/
 client_t::client_t(io_service & io_service, protocol_base_t * impl) :
     impl_(impl),
+    perm_buffer_(async_buffer_.size()),
     socket_(io_service),
     strand_(io_service) {
 
@@ -64,7 +65,7 @@ client_t::~client_t() {
  **/
 void client_t::start() {
     wcout << *this << L" Прибыл клиент.\n";
-    socket_.async_read_some(buffer(buffer_),
+    socket_.async_read_some(buffer(async_buffer_),
             strand_.wrap(
                 [this](const error_code & error, size_t len) {
                     this->handle_read(error, len);
@@ -88,16 +89,30 @@ void client_t::stop() {
  *
  **/
 void client_t::handle_read(const error_code & error, size_t len) {
+
     if (!error) {
+        
         wcout << *this << L" Прочитано " << len << L" байт\n";
-        socket_.async_read_some(buffer(buffer_),
+        
+        if (len && len < async_buffer_.size()) {
+            perm_buffer_.assign(&async_buffer_[0], &async_buffer_[len]);
+        } else {
+            wcout << *this << L" [ERROR][handle_read] len=" << len << L", а capacity=" << async_buffer_.size() << "\n";
+            perm_buffer_.clear();
+        }
+        
+        socket_.async_read_some(buffer(async_buffer_),
                 strand_.wrap(
                     [this](const error_code & error, size_t len) {
                         this->handle_read(error, len);
                     }
                 )
             );
-        impl_->recive();
+        
+        if (!perm_buffer_.empty()) {
+            impl_->recive(&perm_buffer_[0], perm_buffer_.size());
+        }
+
     } else if (error != operation_aborted) {
         wcout << *this << L" [ERROR] " << error << L"\n";
         wcout << *this << L" Закрываем соединение.\n";
