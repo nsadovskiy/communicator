@@ -6,8 +6,13 @@
 #include <locale>
 #include <iostream>
 #include <exception>
+
 #include <boost/asio.hpp>
 #include <boost/lexical_cast.hpp>
+
+#include <log4cplus/logger.h>
+#include <log4cplus/loggingmacros.h>
+#include <log4cplus/configurator.h>
 
 #include "server.hpp"
 #include "omnicomm/protocol.hpp"
@@ -33,6 +38,11 @@ int main(int argc, const char * argv[]) {
 #else
     wcout << L"Где я ?!?\n";
 #endif
+
+    log4cplus::BasicConfigurator config;
+    config.configure();
+    log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("main"));
+    LOG4CPLUS_WARN(logger, LOG4CPLUS_TEXT("Hello, World!"));
 
     if (argc < 4) {
         wcerr << L"Использование: communicator <адрес> <порт> <число_потоков>\n";
