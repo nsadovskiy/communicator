@@ -7,6 +7,9 @@
 
 #include <vector>
 #include <cstddef>
+
+#include <log4cplus/logger.h>
+
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
@@ -42,6 +45,7 @@ private:
     void drop_unused_clients();
 
 private:
+    log4cplus::Logger log_;
     size_t interval_;
     size_t num_workers_;
     create_func_type create_client_func_;

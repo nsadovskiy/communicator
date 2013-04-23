@@ -1,7 +1,5 @@
 /**
  *
- * Компиляция:
- *     g++ -std=c++0x -O2 -Wall main.cpp server.cpp client.cpp -I/home/sns/include/boost-1_53/ -L/home/sns/lib/ -lboost_system-gcc47-mt-sd-1_53 -pthread -o bin/main
  **/
 #include <locale>
 #include <iostream>
@@ -17,41 +15,40 @@
 #include "server.hpp"
 #include "omnicomm/protocol.hpp"
 
-using std::endl;
-using std::wcerr;
-using std::wcout;
+using namespace log4cplus;
+
+using std::cerr;
 using std::exception;
 using boost::lexical_cast;
 
 int main(int argc, const char * argv[]) {
 
-    ::setlocale(LC_ALL, "");
+    // ::setlocale(LC_ALL, "");
 
+    PropertyConfigurator::doConfigure("log4cplus.config");
+    const Logger logger = Logger::getInstance("main");
+
+    LOG4CPLUS_INFO(logger, "Starting Communicator");
 #if defined(BOOST_ASIO_HAS_EPOLL)
-    wcout << L"Нормальный линукс, используется Epoll.\n";
+    LOG4CPLUS_INFO(logger, "Compiled for Linux, use epoll");
 #elif defined(BOOST_ASIO_HAS_IOCP)
-    wcout << L"Поганая винда, используется IoCompletionPort.\n";
+    LOG4CPLUS_INFO(logger, "Compiled for frigging windows, use IoCompletionPort");
 #elif defined(BOOST_ASIO_HAS_KQUEUE)
-    wcout << L"Недобитая FreeBSD или гейская яблоось, используется kqueue.\n";
+    LOG4CPLUS_INFO(logger, "Compiled for FreeBSD or faggot Mac Os X, use kqueue");
 #elif defined(BOOST_ASIO_HAS_DEV_POLL)
-    wcout << L"Соляра, используется /dev/poll.\n";
+    LOG4CPLUS_INFO(logger, "Compiled for Solaris, use /dev/poll");
 #else
-    wcout << L"Где я ?!?\n";
+    LOG4CPLUS_INFO(logger, "Where am I ?!? O_O");
 #endif
 
-    log4cplus::BasicConfigurator config;
-    config.configure();
-    log4cplus::Logger logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("main"));
-    LOG4CPLUS_WARN(logger, LOG4CPLUS_TEXT("Hello, World!"));
-
     if (argc < 4) {
-        wcerr << L"Использование: communicator <адрес> <порт> <число_потоков>\n";
-        wcerr << L"  <адрес>         - адрес привязки прослушивателя\n";
-        wcerr << L"  <порт>          - порт прослушивателя\n";
-        wcerr << L"  <число_потоков> - количество потоков, обрабатывающих запросы\n";
-        wcerr << L"\n";
-        wcerr << L"Пример:\n";
-        wcerr << L"  communicator 0.0.0.0 4010 4\n";
+        cerr << "Usage: communicator <ip-address> <port> <threads>\n";
+        cerr << "  <ip-address>  - listened address to bind\n";
+        cerr << "  <port>        - listened port\n";
+        cerr << "  <threads>     - number woring threads\n";
+        cerr << "\n";
+        cerr << "Example:\n";
+        cerr << "  communicator 0.0.0.0 4010 4\n";
         exit(1);
     }
 
@@ -60,7 +57,7 @@ int main(int argc, const char * argv[]) {
         server.run();
 
     } catch (const exception & e) {
-        wcerr << "[ERROR] " << e.what() << endl;
+        LOG4CPLUS_FATAL(logger, e.what());
     }
-    
+    LOG4CPLUS_INFO(logger, "Execution finished");
 }

@@ -3,16 +3,16 @@
  *
  **/
 #include "protocol_base.hpp"
-#include <iostream>
-
-using std::wcout;
 
 /**
  *
  *
  **/
-protocol_base_t::protocol_base_t() {
-    wcout << L"[" << this << L"][protocol_base_t][constructor]\n";
+protocol_base_t::protocol_base_t() :
+    manipulator_(nullptr),
+    log_(log4cplus::Logger::getInstance("main")) {
+
+    // LOG4CPLUS_TRACE(log_, "constructor");
 }
 
 /**
@@ -20,15 +20,16 @@ protocol_base_t::protocol_base_t() {
  *
  **/
 protocol_base_t::~protocol_base_t() {
-    wcout << L"[" << this << L"][protocol_base_t][destructor]\n";
+    // LOG4CPLUS_TRACE(log_, "destructor");
 }
 
 /**
  *
  *
  **/
-void protocol_base_t::init() {
-    wcout << L"[" << this << L"][protocol_base_t][init]\n";
+void protocol_base_t::init(client_t * manipulator) {
+    manipulator_ = manipulator;
+    LOG4CPLUS_TRACE(log_, "init " << manipulator_);
     init_impl();
 }
 
@@ -37,7 +38,7 @@ void protocol_base_t::init() {
  *
  **/
 void protocol_base_t::connect() {
-    wcout << L"[" << this << L"][protocol_base_t][connect]\n";
+    // LOG4CPLUS_TRACE(log_, "connect");
     connect_impl();
 }
 
@@ -46,6 +47,6 @@ void protocol_base_t::connect() {
  *
  **/
 void protocol_base_t::recive(const unsigned char * data, size_t len) {
-    wcout << L"[" << this << L"][protocol_base_t][recive] len=" << len << "\n";
+    // LOG4CPLUS_TRACE(log_, "recive");
     recive_impl(data, len);
 }

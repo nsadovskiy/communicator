@@ -2,14 +2,14 @@
  *
  *
  **/
+#include "server.hpp"
+
 #include <cassert>
-#include <iostream>
 #include <algorithm>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include "server.hpp"
+
 #include "client.hpp"
 
-using std::wcout;
 using std::distance;
 using std::remove_if;
 using boost::asio::ip::tcp;
@@ -21,6 +21,7 @@ using boost::posix_time::seconds;
  *
  **/
 server_t::server_t(const char * bind_addr, const char * port, size_t num_workers, create_func_type create_func) :
+    log_(log4cplus::Logger::getInstance("main")),
     interval_(5),
     num_workers_(num_workers),
     create_client_func_(create_func),
@@ -89,7 +90,7 @@ void server_t::start_accept() {
  **/
 void server_t::handle_stop() {
     io_service_.stop();
-    wcout << L"Bye!\n";
+    LOG4CPLUS_INFO(log_, "Bye!");
 }
 
 /**
@@ -97,7 +98,6 @@ void server_t::handle_stop() {
  *
  **/
 void server_t::handle_timer(const error_code & error) {
-    // wcout << L"Timer\n";
     if (!error) {
         timer_.expires_at(timer_.expires_at() + seconds(interval_));
         timer_.async_wait(
@@ -116,7 +116,7 @@ void server_t::handle_timer(const error_code & error) {
  **/
 void server_t::handle_accept(const error_code & error, client_type client) {
 
-    wcout << L"Connection accepted\n";
+    LOG4CPLUS_DEBUG(log_, "Connection accepted");
 
     if (!acceptor_.is_open()) {
         return;
@@ -148,7 +148,7 @@ void server_t::drop_unused_clients() {
             }
         );
     if (pos != clients_.end()) {
-        wcout << L"Отключенных клиентов " << distance(pos, clients_.end()) << L". Удаляем.\n";
+        LOG4CPLUS_INFO(log_, "Where are " << distance(pos, clients_.end()) << " disconnected client(s). Kill them all!!!");
         clients_.erase(pos, clients_.end());
     }
 }

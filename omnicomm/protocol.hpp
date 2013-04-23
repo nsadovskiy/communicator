@@ -7,7 +7,16 @@
 
 #include <deque>
 #include <vector>
+#include <log4cplus/logger.h>
+#include "transp.hpp"
 #include "../protocol_base.hpp"
+
+
+/**
+ *
+ *
+ **/
+class client_t;
 
 /**
  *
@@ -15,37 +24,21 @@
  **/
 namespace omnicomm {
 
-
-    /**
-     *
-     *
-     **/
-#   pragma pack(push)
-#   pragma pack(1)
-
-    struct transport_header_t {
-        unsigned char prefix;
-        unsigned char cmd;
-        unsigned short len;
-        unsigned char data[1];
-        unsigned short get_crc() const {
-            return *reinterpret_cast<const unsigned short *>(&data[len]);
-            // return (static_cast<short>(data[len]) << 8) | static_cast<short>(data[len + 1]);
-        }
-    };
-
-#   pragma pack(pop)
-
     /**
      *
      *
      **/
     class protocol_t : public protocol_base_impl_t<protocol_t> {
+    private:
+        typedef std::vector<unsigned char> array_type;
+
     public:
         protocol_t();
 
     private:
         void store_data(const unsigned char * data, size_t len);
+
+        void send(const unsigned char * data, size_t len);
 
     private:
         virtual void init_impl();
@@ -53,8 +46,10 @@ namespace omnicomm {
         virtual void recive_impl(const unsigned char * data, size_t len);
 
     private:
+        log4cplus::Logger log_;
         int state_;
-        std::vector<unsigned char> buffer_;
+        array_type buffer_;
+        transp_protocol_t transport_protocol_;
     };
 }
 
