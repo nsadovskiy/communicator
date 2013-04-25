@@ -83,30 +83,8 @@ void omnicomm::protocol_t::recive_impl(const unsigned char * data, size_t len) {
 
             const transport_header_t * hdr = reinterpret_cast<const transport_header_t *>(&start[0]);
 
-            using std::dec;
-            using std::hex;
-
-            LOG4CPLUS_DEBUG(log_,
-                    "Transport message [prefix=" << 
-                    hex << 
-                    int(hdr->prefix) <<
-                    " command=" << int(hdr->cmd) <<
-                    dec <<
-                    " data length="  << hdr->data_len << 
-                    " full length=" << hdr->get_full_length() << 
-                    hex << 
-                    " crc=" << hdr->get_crc()
-                );
-            // LOG4CPLUS_DEBUG(log_, "   prefix: " << hex << int(hdr->prefix));
-            // LOG4CPLUS_DEBUG(log_, "   command: " << hex << int(hdr->cmd));
-            // LOG4CPLUS_DEBUG(log_, "   data length: " << hdr->data_len);
-            // LOG4CPLUS_DEBUG(log_, "   full length: " << hdr->get_full_length());
-            // LOG4CPLUS_DEBUG(log_, "   message crc: " << hex << hdr->get_crc());
-            // LOG4CPLUS_DEBUG(log_, "   calculated crc: " << hex << hdr->calc_crc());
-            LOG4CPLUS_TRACE(log_, "   data: [" << to_hex_string(hdr->data, hdr->data_len).c_str() << "]");
-
             if (remain_len < static_cast<ptrdiff_t>(hdr->get_full_length())) {
-                LOG4CPLUS_WARN(log_, "Message length less than full size");
+                LOG4CPLUS_TRACE(log_, "Message length less than full size");
                 break;
             }
 
@@ -117,6 +95,22 @@ void omnicomm::protocol_t::recive_impl(const unsigned char * data, size_t len) {
             } else {
                 LOG4CPLUS_TRACE(log_, "Checksum OK");
             }
+
+            using std::dec;
+            using std::hex;
+
+            LOG4CPLUS_DEBUG(log_,
+                    "Transport message [prefix=" 
+                    << hex
+                    << int(hdr->prefix)
+                    << " command=" << int(hdr->cmd)
+                    << dec
+                    << " data length="  << hdr->data_len
+                    << " full length=" << hdr->get_full_length()
+                    << hex
+                    << " crc=" << hdr->get_crc()
+                );
+            LOG4CPLUS_TRACE(log_, "   data: [" << to_hex_string(hdr->data, hdr->data_len).c_str() << "]");
 
             try {
                 omnicomm::transp_protocol_t::array_type result = transport_protocol_.parse(hdr);
@@ -187,6 +181,7 @@ void omnicomm::protocol_t::store_data(const unsigned char * data, size_t len) {
                     buffer_.push_back(0xdb);
                 } else {
                     // Если символы 0x0c и 0xdb экранированы, по-идее, мы сюда попасть не должны...
+                    LOG4CPLUS_WARN(log_, "Unexpected character in data stream");
                     buffer_.push_back(0xdb);
                     buffer_.push_back(data[i]);
                 }

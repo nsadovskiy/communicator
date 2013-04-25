@@ -36,8 +36,8 @@ private:
     virtual void recive_impl(const unsigned char * data, size_t len) = 0;
 
 private:
-    client_t * manipulator_;
     log4cplus::Logger log_;
+    client_t * manipulator_;
 };
 
 /**

@@ -2,9 +2,22 @@
  *
  *
  **/
+#include <ctime>
+#include <iomanip>
+#include <sstream>
 #include "utils.hpp"
 
+using std::setw;
+using std::string;
+using std::ostringstream;
+
+/**
+ *
+ *
+ **/
 namespace {
+
+    size_t omnicomm_time_base = 1230768000;
 
     const unsigned short crc_table[256] = {
             0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7,
@@ -42,10 +55,33 @@ namespace {
         };
 }
 
+/**
+ *
+ *
+ **/
 unsigned short omnicomm::crc16(const unsigned char * data, size_t len) {
     unsigned short crc = 0xffff;
     while (len--)
         crc = crc_table[((crc>>8) ^ *data++) & 0xFFL] ^ (crc << 8);
-    // return ((crc & 0x00ff) << 8) | ((crc & 0xff00) >> 8);
     return crc;
+}
+
+/**
+ *
+ *
+ **/
+std::string omnicomm::otime_to_string(size_t omnicomm_time) {
+
+    ostringstream str;
+    str.fill('0');
+    time_t unix_time = omnicomm_time + omnicomm_time_base;
+    struct tm * t = gmtime(&unix_time);
+    str <<
+        setw(2) << t->tm_mday << "." << 
+        setw(2) << t->tm_mon << "."<< 
+        setw(4) << (1900 + t->tm_year) << " " << 
+        setw(2) << t->tm_hour << ":" << 
+        setw(2) << t->tm_min << ":" << 
+        setw(2) << t->tm_sec;
+    return str.str();
 }

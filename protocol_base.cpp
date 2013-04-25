@@ -9,8 +9,8 @@
  *
  **/
 protocol_base_t::protocol_base_t() :
-    manipulator_(nullptr),
-    log_(log4cplus::Logger::getInstance("main")) {
+    log_(log4cplus::Logger::getInstance("main")),
+    manipulator_(nullptr) {
 
     // LOG4CPLUS_TRACE(log_, "constructor");
 }
