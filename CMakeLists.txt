@@ -11,9 +11,10 @@ INCLUDE(FindProtobuf)
 INCLUDE(FindLog4cplus)
 
 FIND_PACKAGE(Threads)
+FIND_PACKAGE(MongoDB)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Log4cplus REQUIRED)
-FIND_PACKAGE(Boost 1.53 COMPONENTS system REQUIRED)
+FIND_PACKAGE(Boost 1.53 COMPONENTS system thread REQUIRED)
 
 SET(SOURCES ${SOURCES}
     main.cpp
@@ -21,11 +22,20 @@ SET(SOURCES ${SOURCES}
     server.cpp
     client.cpp
     protocol_base.cpp
+    store.cpp
 )
+
+IF (MongoDB_FOUND)
+    MESSAGE("-- MongoDB backend support enabled")
+    SET(SOURCES ${SOURCES}
+        mongodb_backend.cpp
+    )
+ENDIF(MongoDB_FOUND)
 
 INCLUDE(omnicomm/CMakeLists.txt)
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${MongoDB_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${PROTOBUF_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${LOG4CPLUS_INCLUDE_DIRS})
 
@@ -39,6 +49,7 @@ TARGET_LINK_LIBRARIES(communicator
     ${Boost_LIBRARIES}
     ${PROTOBUF_LIBRARY}
     ${LOG4CPLUS_LIBRARIES}
+    ${MongoDB_LIBRARIES}
 )
 
 SET(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/bin")

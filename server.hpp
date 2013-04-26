@@ -19,6 +19,7 @@
  *
  **/
 class client_t;
+class store_backend_t;
 class protocol_base_t;
 
 class server_t {
@@ -33,6 +34,7 @@ private:
 
 public:
     server_t(const char * bind_addr, const char * port, size_t num_workers, create_func_type create_func);
+    virtual ~server_t();
 
 public:
     void run();
@@ -55,6 +57,7 @@ private:
     boost::asio::ip::tcp::acceptor acceptor_;
     boost::asio::deadline_timer timer_;
     client_array_type clients_;
+    boost::shared_ptr<store_backend_t> store_backend_;
 };
 
 #endif // SERVER_HPP
