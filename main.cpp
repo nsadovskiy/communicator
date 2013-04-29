@@ -1,7 +1,6 @@
 /**
  *
  **/
-#include <locale>
 #include <iostream>
 #include <exception>
 
@@ -22,8 +21,6 @@ using std::exception;
 using boost::lexical_cast;
 
 int main(int argc, const char * argv[]) {
-
-    // ::setlocale(LC_ALL, "");
 
     PropertyConfigurator::doConfigure("log4cplus.config");
     const Logger logger = Logger::getInstance("main");

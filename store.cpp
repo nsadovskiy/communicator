@@ -27,7 +27,7 @@ store_backend_t::~store_backend_t() {
  **/
 size_t store_backend_t::add_message(const std::string & msg) {
 
-    LOG4CPLUS_TRACE(log_, "storing message [" << msg << "]");
+    LOG4CPLUS_TRACE(log_, "Storing message [" << msg << "]");
 
     lock_guard_type lock(mutex_);
 
@@ -68,7 +68,7 @@ void store_backend_t::stop() {
  **/
 void store_backend_t::work_proc() {
 
-    LOG4CPLUS_INFO(log_, "storage work thread started");
+    LOG4CPLUS_INFO(log_, "Storage work thread started");
 
     array_type messages;
 
@@ -82,9 +82,9 @@ void store_backend_t::work_proc() {
                 messages_.clear();
             }
 
-            if (!messages_.empty()) {
+            if (!messages.empty()) {
                 
-                LOG4CPLUS_INFO(log_, "storing found " << messages_.size() << " undelivered message(s)");
+                LOG4CPLUS_DEBUG(log_, "Found " << messages.size() << " undelivered message(s)");
                 
                 for (auto msg : messages) {
                     save_messages_impl(msg);
@@ -92,14 +92,14 @@ void store_backend_t::work_proc() {
                 }
             
             } else { //if (!messages_.empty())
-                LOG4CPLUS_TRACE(log_, "no undelivered messages found");
+                LOG4CPLUS_TRACE(log_, "No undelivered messages found");
             } // if (!messages_.empty())
 
             boost::this_thread::sleep(boost::posix_time::seconds(5));
         }
 
     } catch(boost::thread_interrupted &) {
-        LOG4CPLUS_INFO(log_, "storage work thread interrupted");
+        LOG4CPLUS_INFO(log_, "Storage work thread interrupted");
 
     } catch (std::exception & e) {
         LOG4CPLUS_ERROR(log_, e.what());

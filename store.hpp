@@ -25,9 +25,14 @@ public:
     virtual ~store_backend_t();
 
 public:
-    size_t add_message(const std::string & msg);
     log4cplus::Logger & get_log() {
         return log_;
+    }
+
+    size_t add_message(const std::string & msg);
+    size_t size() {
+        lock_guard_type lock(mutex_);
+        return messages_.size();
     }
 
     void start();

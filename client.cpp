@@ -16,17 +16,18 @@ using boost::asio::error::operation_aborted;
  *
  *
  **/
-client_t::pointer_type client_t::create(io_service & io_service, protocol_base_t * impl) {
-    return pointer_type(new client_t(io_service, impl));
+client_t::pointer_type client_t::create(io_service & io_service, protocol_base_t * impl, store_backend_t & store_backend) {
+    return pointer_type(new client_t(io_service, impl, store_backend));
 }
 
 /**
  *
  *
  **/
-client_t::client_t(io_service & io_service, protocol_base_t * impl) :
+client_t::client_t(io_service & io_service, protocol_base_t * impl, store_backend_t & store_backend) :
     log_(log4cplus::Logger::getInstance("main")),
     impl_(impl),
+    store_backend_(store_backend),
     perm_buffer_(async_buffer_.size()),
     socket_(io_service),
     strand_(io_service) {

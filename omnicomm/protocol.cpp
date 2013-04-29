@@ -8,9 +8,10 @@
 #include <iomanip>
 #include <algorithm>
 
-#include "../client.hpp"
 #include "utils.hpp"
 #include "../utils.hpp"
+#include "../store.hpp"
+#include "../client.hpp"
 
 using std::find;
 using std::distance;
@@ -67,6 +68,7 @@ void omnicomm::protocol_t::recive_impl(const unsigned char * data, size_t len) {
 
     ptrdiff_t remain_len;
     array_type::iterator start= buffer_.begin();
+    transp_protocol_t::message_array_type messages;
 
     while (start != buffer_.end()) {
         
@@ -99,7 +101,7 @@ void omnicomm::protocol_t::recive_impl(const unsigned char * data, size_t len) {
             using std::dec;
             using std::hex;
 
-            LOG4CPLUS_DEBUG(log_,
+            LOG4CPLUS_TRACE(log_,
                     "Transport message [prefix=" 
                     << hex
                     << int(hdr->prefix)
@@ -113,13 +115,21 @@ void omnicomm::protocol_t::recive_impl(const unsigned char * data, size_t len) {
             LOG4CPLUS_TRACE(log_, "   data: [" << to_hex_string(hdr->data, hdr->data_len).c_str() << "]");
 
             try {
-                omnicomm::transp_protocol_t::array_type result = transport_protocol_.parse(hdr);
+                
+                messages.clear();
+                omnicomm::transp_protocol_t::array_type result = transport_protocol_.parse(hdr, messages);
+                
                 if (!result.empty()) {
                     unsigned short crc = reinterpret_cast<const transport_header_t *>(&result[0])->calc_crc();
                     result.push_back(static_cast<unsigned char>(crc & 0xFF));
                     result.push_back(static_cast<unsigned char>(crc >> 8));
                     send(&result[0], result.size());
                 }
+
+                for (auto msg: messages) {
+                    get_manipulator()->get_backend().add_message(msg);
+                }
+
             } catch(const exception & e) {
                 LOG4CPLUS_ERROR(log_, e.what());
             }

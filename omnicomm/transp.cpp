@@ -23,7 +23,7 @@ std::basic_ostream<T> & operator <<(std::basic_ostream<T> & stream, const std::m
         if (i != map.begin()) {
             stream << " ";
         }
-        stream << "\"" << (*i).first << "\"=\"" << (*i).second << "\"";
+        stream << (*i).first << "=\"" << (*i).second << "\"";
     }
 
     return stream;
@@ -42,7 +42,7 @@ omnicomm::transp_protocol_t::transp_protocol_t(protocol_t & impl) :
  *
  *
  **/
-omnicomm::transp_protocol_t::array_type omnicomm::transp_protocol_t::parse(const transport_header_t * hdr) {
+omnicomm::transp_protocol_t::array_type omnicomm::transp_protocol_t::parse(const transport_header_t * hdr, message_array_type & messages) {
 
     switch (hdr->cmd) {
 
@@ -50,10 +50,10 @@ omnicomm::transp_protocol_t::array_type omnicomm::transp_protocol_t::parse(const
             return controller_ident(hdr);
 
         case tm_code::c_current_data:
-            return current_data_response(hdr);
+            return current_data_response(hdr, messages);
 
         case tm_code::c_archive_data:
-            return archive_data_response(hdr);
+            return archive_data_response(hdr, messages);
 
         case tm_code::c_delete_confirm:
             break;
@@ -87,14 +87,14 @@ omnicomm::transp_protocol_t::array_type omnicomm::transp_protocol_t::controller_
  *
  *
  **/
-omnicomm::transp_protocol_t::array_type omnicomm::transp_protocol_t::archive_data_response(const transport_header_t * hdr) {
+omnicomm::transp_protocol_t::array_type omnicomm::transp_protocol_t::archive_data_response(const transport_header_t * hdr, message_array_type & messages) {
 
     const data_response_t * msg = reinterpret_cast<const data_response_t *>(hdr);
     msg->check_length();
-    LOG4CPLUS_INFO(log_, "archive_data_response[last_mes_number=" << msg->last_mes_number << ", first_mes_time=" << msg->first_mes_time << " priority=" << static_cast<int>(msg->priority) << "]");
+    LOG4CPLUS_TRACE(log_, "archive_data_response[last_mes_number=" << msg->last_mes_number << ", first_mes_time=" << omnicomm::otime_to_string(msg->first_mes_time) << " priority=" << static_cast<int>(msg->priority) << "]");
     LOG4CPLUS_TRACE(log_, "archive_data_response[data=[" << to_hex_string(msg->im_data, msg->get_im_length()) << "]]");
 
-    process_info_messages(msg);
+    process_info_messages(msg, messages);
 
     return array_type();
 }
@@ -103,13 +103,14 @@ omnicomm::transp_protocol_t::array_type omnicomm::transp_protocol_t::archive_dat
  *
  *
  **/
-omnicomm::transp_protocol_t::array_type omnicomm::transp_protocol_t::current_data_response(const transport_header_t * hdr) {
+omnicomm::transp_protocol_t::array_type omnicomm::transp_protocol_t::current_data_response(const transport_header_t * hdr, message_array_type & messages) {
 
     const data_response_t * msg = reinterpret_cast<const data_response_t *>(hdr);
     msg->check_length();
-    LOG4CPLUS_INFO(log_, "current_data_response[last_mes_number=" << msg->last_mes_number << ", first_mes_time=" << msg->first_mes_time << " priority=" << static_cast<int>(msg->priority) << "]");
+    LOG4CPLUS_TRACE(log_, "current_data_response[last_mes_number=" << msg->last_mes_number << ", first_mes_time=" << msg->first_mes_time << " priority=" << static_cast<int>(msg->priority) << "]");
+    LOG4CPLUS_TRACE(log_, "current_data_response[data=[" << to_hex_string(msg->im_data, msg->get_im_length()) << "]]");
 
-    process_info_messages(msg);
+    process_info_messages(msg, messages);
 
     return array_type();
 }
@@ -118,8 +119,9 @@ omnicomm::transp_protocol_t::array_type omnicomm::transp_protocol_t::current_dat
  *
  *
  **/
-size_t omnicomm::transp_protocol_t::process_info_messages(const data_response_t * response) {
+size_t omnicomm::transp_protocol_t::process_info_messages(const data_response_t * response, message_array_type & messages) {
 
+    ostringstream str;
     map<string, string> data;
     const info_message_t * msg = nullptr;
     size_t i = 0, im_data_size = response->get_im_length();
@@ -145,7 +147,13 @@ size_t omnicomm::transp_protocol_t::process_info_messages(const data_response_t 
 
             data.clear();
             extract(message.mid(i), message, data);
-            LOG4CPLUS_INFO(log_, "[" << data << "]");
+
+            str.str("");
+            str.clear();
+            str << data;
+            messages.push_back(str.str());
+            
+            LOG4CPLUS_DEBUG(log_, "Message [" << data << "]");
         }
 
         i += msg->size();

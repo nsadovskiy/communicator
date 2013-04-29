@@ -29,7 +29,7 @@ server_t::server_t(const char * bind_addr, const char * port, size_t num_workers
     signals_(io_service_),
     acceptor_(io_service_),
     timer_(io_service_, seconds(interval_)),
-    store_backend_(new mongodb_backend_t("10.10.3.25")) {
+    store_backend_(new mongodb_backend_t("10.10.3.25:27017")) {
 
     assert(create_client_func_);
 
@@ -87,7 +87,7 @@ void server_t::start_accept() {
 
     assert(create_client_func_);
 
-    client_type client(client_t::create(io_service_, create_client_func_()));
+    client_type client(client_t::create(io_service_, create_client_func_(), *store_backend_));
     acceptor_.async_accept(
         client->get_socket(),
         [this, client](const error_code & error) {

@@ -17,6 +17,7 @@
  *
  **/
 class protocol_base_t;
+class store_backend_t;
 
 class client_t :
     public boost::enable_shared_from_this<client_t>,
@@ -28,7 +29,7 @@ public:
 
 public:
     virtual ~client_t();
-    static pointer_type create(boost::asio::io_service & io_service, protocol_base_t * impl);
+    static pointer_type create(boost::asio::io_service & io_service, protocol_base_t * impl, store_backend_t & store_backend);
 
     boost::asio::ip::tcp::socket & get_socket() {
         return socket_;
@@ -38,14 +39,19 @@ public:
     void stop();
     void send(const unsigned char * data, size_t len);
 
+    store_backend_t & get_backend() {
+        return store_backend_;
+    }
+
 private:
-    client_t(boost::asio::io_service & io_service, protocol_base_t * impl);
+    client_t(boost::asio::io_service & io_service, protocol_base_t * impl, store_backend_t & store_backend);
     void handle_read(const boost::system::error_code & error, size_t len);
     void handle_write(const boost::system::error_code & ec, size_t bytes_transferred);
 
 private:
     log4cplus::Logger log_;
     impl_type impl_;
+    store_backend_t & store_backend_;
     boost::array<char, 8192> async_buffer_;
     std::vector<unsigned char> perm_buffer_;
     boost::asio::ip::tcp::socket socket_;

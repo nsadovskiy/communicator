@@ -177,20 +177,21 @@ namespace omnicomm {
     class transp_protocol_t {
     public:
         typedef std::vector<unsigned char> array_type;
+        typedef std::vector<std::string> message_array_type;
 
     public:
         transp_protocol_t(protocol_t & impl);
 
     public:
-        array_type parse(const transport_header_t * hdr);
+        array_type parse(const transport_header_t * hdr, message_array_type & messages);
 
     private:
 
         // Обработка транспортных сообщения
         array_type controller_ident(const transport_header_t * hdr);
-        array_type archive_data_response(const transport_header_t * hdr);
-        array_type current_data_response(const transport_header_t * hdr);
-        size_t process_info_messages(const data_response_t * response);
+        array_type archive_data_response(const transport_header_t * hdr, message_array_type & messages);
+        array_type current_data_response(const transport_header_t * hdr, message_array_type & messages);
+        size_t process_info_messages(const data_response_t * response, message_array_type & messages);
 
         void extract(unsigned message_id, const RecReg & message, std::map<std::string, std::string> & data);
         void extract(const RecReg_General & message, std::map<std::string, std::string> & data);
