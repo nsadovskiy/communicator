@@ -16,17 +16,42 @@ using std::string;
 using std::setprecision;
 using std::ostringstream;
 
-template<class T>
-std::basic_ostream<T> & operator <<(std::basic_ostream<T> & stream, const std::map<std::string, std::string> & map) {
+/**
+ *
+ *
+ **/
+namespace {
 
-    for (auto i = map.begin(); i != map.end(); ++i) {
-        if (i != map.begin()) {
-            stream << " ";
+    template<class T>
+    std::basic_ostream<T> & operator <<(std::basic_ostream<T> & stream, const std::map<std::string, std::string> & map) {
+
+        for (auto i = map.begin(); i != map.end(); ++i) {
+            if (i != map.begin()) {
+                stream << " ";
+            }
+            stream << (*i).first << "=\"" << (*i).second << "\"";
         }
-        stream << (*i).first << "=\"" << (*i).second << "\"";
-    }
 
-    return stream;
+        return stream;
+    };
+}
+
+/**
+ *
+ *
+ **/
+union reg_flags {
+    unsigned flags;
+    struct {
+        unsigned ignition: 1;
+        unsigned gsm_status: 1;
+        unsigned gps_status: 1;
+        unsigned roaming: 1;
+        unsigned power_status: 1;
+        unsigned alarm: 1;
+        unsigned open_case: 1;
+        unsigned discrete_input: 1;
+    } bits;
 };
 
 /**
@@ -231,14 +256,59 @@ void omnicomm::transp_protocol_t::extract(const RecReg_General & message, map<st
     if (message.has_iddrv()) {
         str.str("");
         str.clear();
+        // TODO: доделать вывод ебаттона
         // str << message.iddrv();
         // data["driver_id"] = str.str();
     }
 
     if (message.has_flg()) {
+
+        reg_flags flg;
+        flg.flags = message.flg();
+
         str.str("");
         str.clear();
-        str << message.flg();
+        str << flg.bits.ignition;
+        data["ignition"] = str.str();
+
+        str.str("");
+        str.clear();
+        str << flg.bits.gsm_status;
+        data["gsm_status"] = str.str();
+
+        str.str("");
+        str.clear();
+        str << flg.bits.gps_status;
+        data["gps_status"] = str.str();
+
+        str.str("");
+        str.clear();
+        str << flg.bits.roaming;
+        data["roaming"] = str.str();
+
+        str.str("");
+        str.clear();
+        str << flg.bits.power_status;
+        data["power_status"] = str.str();
+
+        str.str("");
+        str.clear();
+        str << flg.bits.alarm;
+        data["alarm"] = str.str();
+
+        str.str("");
+        str.clear();
+        str << flg.bits.open_case;
+        data["open_case"] = str.str();
+
+        str.str("");
+        str.clear();
+        str << flg.bits.discrete_input;
+        data["discrete_input"] = str.str();
+
+        str.str("");
+        str.clear();
+        str << flg.flags;
         data["flags"] = str.str();
     }
 
