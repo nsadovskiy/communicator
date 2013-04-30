@@ -21,7 +21,7 @@ class store_backend_t {
     typedef boost::lock_guard<boost::mutex> lock_guard_type;
 
 public:
-    store_backend_t();
+    store_backend_t(const std::string & login, const std::string & password, const std::string & path);
     virtual ~store_backend_t();
 
 public:
@@ -48,6 +48,18 @@ public:
         sleep_interval_ = interval;
     }
 
+    const std::string & get_login() const {
+        return login_;
+    }
+
+    const std::string & get_password() const {
+        return password_;
+    }
+
+    const std::string & get_path() const {
+        return path_;
+    }
+
 private:
     void work_proc();
 
@@ -56,6 +68,9 @@ private:
     virtual void save_messages_impl(const std::string & msg) = 0;
 
 private:
+    std::string login_;
+    std::string password_;
+    std::string path_;
     size_t sleep_interval_;
     log4cplus::Logger log_;
     boost::mutex mutex_;

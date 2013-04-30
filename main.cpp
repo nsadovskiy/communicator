@@ -5,6 +5,7 @@
 #include <exception>
 
 #include <boost/asio.hpp>
+#include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <log4cplus/logger.h>
@@ -26,6 +27,7 @@ int main(int argc, const char * argv[]) {
     const Logger logger = Logger::getInstance("main");
 
     LOG4CPLUS_INFO(logger, "Starting Communicator");
+
 #if defined(BOOST_ASIO_HAS_EPOLL)
     LOG4CPLUS_INFO(logger, "Compiled for Linux, use epoll");
 #elif defined(BOOST_ASIO_HAS_IOCP)
@@ -38,14 +40,18 @@ int main(int argc, const char * argv[]) {
     LOG4CPLUS_INFO(logger, "Where am I ?!? O_O");
 #endif
 
-    if (argc < 4) {
-        cerr << "Usage: communicator <ip-address> <port> <threads>\n";
+    boost::cmatch match;
+    boost::regex re("(\\w+)://((\\w+):(\\w+)@)?(.*)?");
+
+    if (argc < 5 || !boost::regex_match(argv[4], match, re)) {
+        cerr << "Usage: communicator <ip-address> <port> <threads> <store>\n";
         cerr << "  <ip-address>  - listened address to bind\n";
         cerr << "  <port>        - listened port\n";
         cerr << "  <threads>     - number woring threads\n";
+        cerr << "  <store>       - storage connection protocol://login:password@path\n";
         cerr << "\n";
         cerr << "Example:\n";
-        cerr << "  communicator 0.0.0.0 4010 4\n";
+        cerr << "  communicator 0.0.0.0 4010 4 rabbitmq://guest:guest@path/\n";
         exit(1);
     }
 

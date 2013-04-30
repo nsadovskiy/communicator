@@ -16,14 +16,14 @@
 class mongodb_backend_t : public store_backend_t {
 
 public:
-    mongodb_backend_t(std::string server_ip);
+    mongodb_backend_t(const std::string & login, const std::string & password, const std::string & path);
     virtual ~mongodb_backend_t();
 
 private:
     virtual void save_messages_impl(const std::string & msg);
 
 private:
-    std::string server_ip_;
+    // std::string server_ip_;
     mongo::DBClientConnection connection_;
 };
 

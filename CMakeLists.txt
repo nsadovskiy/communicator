@@ -8,13 +8,15 @@ SET(Boost_USE_STATIC_LIBS ON)
 SET(Boost_USE_MULTITHREADED ON)
 
 INCLUDE(FindProtobuf)
+INCLUDE(FindRabbitMQ)
 INCLUDE(FindLog4cplus)
 
 FIND_PACKAGE(Threads)
 FIND_PACKAGE(MongoDB)
+FIND_PACKAGE(RabbitMQ)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Log4cplus REQUIRED)
-FIND_PACKAGE(Boost 1.49 COMPONENTS system thread filesystem program_options REQUIRED)
+FIND_PACKAGE(Boost 1.49 COMPONENTS system thread filesystem program_options regex REQUIRED)
 
 SET(SOURCES ${SOURCES}
     main.cpp
@@ -22,25 +24,21 @@ SET(SOURCES ${SOURCES}
     server.cpp
     client.cpp
     protocol_base.cpp
-    store.cpp
 )
 
-IF (MongoDB_FOUND)
-    MESSAGE("-- MongoDB backend support enabled")
-    SET(SOURCES ${SOURCES}
-        mongodb_backend.cpp
-    )
-ENDIF(MongoDB_FOUND)
-
 INCLUDE(omnicomm/CMakeLists.txt)
+INCLUDE(backends/CMakeLists.txt)
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${MongoDB_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${PROTOBUF_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${RABBITMQ_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${LOG4CPLUS_INCLUDE_DIRS})
 
 # SET(CMAKE_CXX_FLAGS "-std=c++0x -O2 -Wall -fno-strict-aliasing")
 SET(CMAKE_CXX_FLAGS "-std=c++0x -O2 -Wall")
+
+CONFIGURE_FILE(cmake/config.h.in ${CMAKE_SOURCE_DIR}/config.h)
 
 ADD_EXECUTABLE(communicator ${SOURCES})
 
@@ -50,6 +48,7 @@ TARGET_LINK_LIBRARIES(communicator
     ${Boost_LIBRARIES}
     ${PROTOBUF_LIBRARY}
     ${LOG4CPLUS_LIBRARIES}
+    ${RABBITMQ_LIBRARIES}
 )
 
 SET(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/bin")

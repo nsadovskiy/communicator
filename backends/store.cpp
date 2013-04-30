@@ -9,7 +9,10 @@
  *
  *
  **/
-store_backend_t::store_backend_t() :
+store_backend_t::store_backend_t(const std::string & login, const std::string & password, const std::string & path) :
+    login_(login),
+    password_(password),
+    path_(path),
     log_(log4cplus::Logger::getInstance("main")) {
 }
 

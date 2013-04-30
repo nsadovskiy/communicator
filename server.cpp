@@ -9,7 +9,8 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "client.hpp"
-#include "mongodb_backend.hpp"
+#include "backends/mongodb.hpp"
+#include "backends/rabbitmq.hpp"
 
 using std::distance;
 using std::remove_if;
@@ -29,7 +30,7 @@ server_t::server_t(const char * bind_addr, const char * port, size_t num_workers
     signals_(io_service_),
     acceptor_(io_service_),
     timer_(io_service_, seconds(interval_)),
-    store_backend_(new mongodb_backend_t("10.10.3.25:27017")) {
+    store_backend_(new mongodb_backend_t("", "", "10.10.3.25:27017")) {
 
     assert(create_client_func_);
 
