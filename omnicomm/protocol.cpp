@@ -11,7 +11,7 @@
 #include "utils.hpp"
 #include "../utils.hpp"
 #include "../client.hpp"
-#include "../backends/store.hpp"
+#include "../backends/base.hpp"
 
 using std::find;
 using std::distance;

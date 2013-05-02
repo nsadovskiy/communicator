@@ -6,6 +6,7 @@
 #define SERVER_HPP
 
 #include <vector>
+#include <string>
 #include <cstddef>
 
 #include <log4cplus/logger.h>
@@ -19,45 +20,84 @@
  *
  **/
 class client_t;
-class store_backend_t;
 class protocol_base_t;
 
-class server_t {
+/**
+ *
+ *
+ **/
+namespace communicator {
 
-public:
-    typedef protocol_base_t * (*create_func_type)();
+    namespace backend {
+        class base_impl_t;
+    }
 
-private:
-    typedef boost::shared_ptr<client_t> client_type;
-    typedef std::vector<client_type> client_array_type;
-    typedef boost::lock_guard<boost::mutex> lock_guard_type;
+    /**
+     *
+     *
+     **/
+    struct settings_t {
 
-public:
-    server_t(const char * bind_addr, const char * port, size_t num_workers, create_func_type create_func);
-    virtual ~server_t();
+        unsigned num_workers;
 
-public:
-    void run();
+        struct {
+            std::string ip_addr;
+            std::string port;
+        } listen;
 
-private:
-    void handle_stop();
-    void handle_timer(const boost::system::error_code & error);
-    void handle_accept(const boost::system::error_code & error, client_type client);
-    void start_accept();
-    void drop_unused_clients();
+        struct {
+            std::string protocol;
+            std::string username;
+            std::string password;
+            std::string path;
+        } store;
 
-private:
-    log4cplus::Logger log_;
-    size_t interval_;
-    size_t num_workers_;
-    create_func_type create_client_func_;
-    boost::mutex mutex_;
-    boost::asio::io_service io_service_;
-    boost::asio::signal_set signals_;
-    boost::asio::ip::tcp::acceptor acceptor_;
-    boost::asio::deadline_timer timer_;
-    client_array_type clients_;
-    boost::shared_ptr<store_backend_t> store_backend_;
-};
+    };
+
+    /**
+     *
+     *
+     **/
+    class server_t {
+
+    public:
+        typedef protocol_base_t * (*create_func_type)();
+
+    private:
+        typedef boost::shared_ptr<client_t> client_pointer_type;
+        typedef boost::lock_guard<boost::mutex> lock_guard_type;
+
+    public:
+        server_t(const settings_t & settings, create_func_type create_func);
+        // server_t(const char * bind_addr, const char * port, size_t num_workers, create_func_type create_func);
+        virtual ~server_t();
+
+    public:
+        void run();
+
+    private:
+        void bind_signals();
+        void start_listen(const std::string & ip_addr, const std::string & port);
+
+        void handle_stop();
+        void handle_timer(const boost::system::error_code & error);
+        void handle_accept(const boost::system::error_code & error, client_pointer_type client);
+        void start_accept();
+        void drop_unused_clients();
+
+    private:
+        log4cplus::Logger log_;
+        size_t interval_;
+        size_t num_workers_;
+        create_func_type create_client_func_;
+        boost::mutex mutex_;
+        boost::asio::io_service io_service_;
+        boost::asio::signal_set signals_;
+        boost::asio::ip::tcp::acceptor acceptor_;
+        boost::asio::deadline_timer timer_;
+        std::vector<client_pointer_type> clients_;
+        boost::shared_ptr<backend::base_impl_t> store_backend_;
+    };
+}
 
 #endif // SERVER_HPP

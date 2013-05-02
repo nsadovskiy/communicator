@@ -2,14 +2,14 @@
  *
  *
  **/
-#include "store.hpp"
+#include "base.hpp"
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 /**
  *
  *
  **/
-store_backend_t::store_backend_t(const std::string & login, const std::string & password, const std::string & path) :
+communicator::backend::base_impl_t::base_impl_t(const std::string & login, const std::string & password, const std::string & path) :
     login_(login),
     password_(password),
     path_(path),
@@ -20,7 +20,7 @@ store_backend_t::store_backend_t(const std::string & login, const std::string & 
  *
  *
  **/
-store_backend_t::~store_backend_t() {
+communicator::backend::base_impl_t::~base_impl_t() {
     stop();
 }
 
@@ -28,14 +28,21 @@ store_backend_t::~store_backend_t() {
  *
  *
  **/
-size_t store_backend_t::add_message(const std::string & msg) {
+void communicator::backend::base_impl_t::begin_batch(size_t num_messages) {
+    begin_batch_impl(num_messages);
+}
 
-    LOG4CPLUS_TRACE(log_, "Storing message [" << msg << "]");
+/**
+ *
+ *
+ **/
+size_t communicator::backend::base_impl_t::add_message(const std::string & msg) {
+
+    LOG4CPLUS_TRACE(log_, "Enqueuing message [" << msg << "]");
 
     lock_guard_type lock(mutex_);
 
     messages_.push_back(msg);
-    add_message_impl(msg);
 
     return messages_.size();
 }
@@ -44,7 +51,15 @@ size_t store_backend_t::add_message(const std::string & msg) {
  *
  *
  **/
-void store_backend_t::start() {
+void communicator::backend::base_impl_t::end_batch() {
+    end_batch_impl();
+}
+
+/**
+ *
+ *
+ **/
+void communicator::backend::base_impl_t::start() {
 
     if (!work_thread_) {
         work_thread_.reset(
@@ -57,7 +72,7 @@ void store_backend_t::start() {
  *
  *
  **/
-void store_backend_t::stop() {
+void communicator::backend::base_impl_t::stop() {
     if (work_thread_) {
         work_thread_->interrupt();
         work_thread_->join();
@@ -69,7 +84,7 @@ void store_backend_t::stop() {
  *
  *
  **/
-void store_backend_t::work_proc() {
+void communicator::backend::base_impl_t::work_proc() {
 
     LOG4CPLUS_INFO(log_, "Storage work thread started");
 
@@ -88,11 +103,15 @@ void store_backend_t::work_proc() {
             if (!messages.empty()) {
                 
                 LOG4CPLUS_DEBUG(log_, "Found " << messages.size() << " undelivered message(s)");
-                
+
+                begin_batch(messages.size());
+
                 for (auto msg : messages) {
-                    save_messages_impl(msg);
+                    save_message_impl(msg);
                     boost::this_thread::interruption_point();
                 }
+
+                end_batch();
             
             } else { //if (!messages_.empty())
                 LOG4CPLUS_TRACE(log_, "No undelivered messages found");
@@ -113,5 +132,12 @@ void store_backend_t::work_proc() {
  *
  *
  **/
-void store_backend_t::add_message_impl(const std::string & msg) {
+void communicator::backend::base_impl_t::begin_batch_impl(size_t num_messages) {
+}
+
+/**
+ *
+ *
+ **/
+void communicator::backend::base_impl_t::end_batch_impl() {
 }

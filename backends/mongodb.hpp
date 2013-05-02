@@ -7,24 +7,34 @@
 
 #include <string>
 #include <mongo/client/dbclient.h>
-#include "store.hpp"
+#include "base.hpp"
 
 /**
  *
  *
  **/
-class mongodb_backend_t : public store_backend_t {
+namespace communicator {
+    namespace backend {
 
-public:
-    mongodb_backend_t(const std::string & login, const std::string & password, const std::string & path);
-    virtual ~mongodb_backend_t();
+        /**
+         *
+         *
+         **/
+        class mongodb_backend_t : public base_impl_t {
 
-private:
-    virtual void save_messages_impl(const std::string & msg);
+        public:
+            mongodb_backend_t(const std::string & login, const std::string & password, const std::string & path);
+            virtual ~mongodb_backend_t();
 
-private:
-    // std::string server_ip_;
-    mongo::DBClientConnection connection_;
-};
+        private:
+            virtual void save_message_impl(const std::string & msg);
+
+        private:
+            // std::string server_ip_;
+            mongo::DBClientConnection connection_;
+        };
+
+    }
+}
 
 #endif // MONGODB_STORE_HPP

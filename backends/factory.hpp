@@ -11,21 +11,20 @@
  *
  *
  **/
-class store_backend_t;
-
-/**
- *
- *
- **/
 namespace communicator {
     namespace backend {
+
+        class base_impl_t;
+
+        typedef boost::shared_ptr<base_impl_t> base_impl_pointer_type;
 
         /**
          *
          *
          **/
         namespace factory {
-            boost::shared_ptr<store_backend_t> create(const std::string & protocol, const std::string & login, const std::string & password, const std::string & path);
+
+            base_impl_pointer_type create(const std::string & protocol, const std::string & login, const std::string & password, const std::string & path);
         }
     }
 }

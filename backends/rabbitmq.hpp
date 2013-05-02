@@ -5,7 +5,7 @@
 #ifndef RABBITMQ_STORE_HPP
 #define RABBITMQ_STORE_HPP
 
-#include "store.hpp"
+#include "base.hpp"
 
 /**
  *
@@ -18,13 +18,13 @@ namespace communicator {
          *
          *
          **/
-        class rabbitmq_t : public store_backend_t {
+        class rabbitmq_t : public base_impl_t {
         public:
             rabbitmq_t(const std::string & login, const std::string & password, const std::string & path);
             virtual ~rabbitmq_t();
 
         private:
-            virtual void save_messages_impl(const std::string & msg);
+            virtual void save_message_impl(const std::string & msg);
         };
     };
 };

@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 SET(SOURCES ${SOURCES}
-    backends/store.cpp
+    backends/base.cpp
     backends/factory.cpp
 )
 
@@ -16,3 +16,9 @@ IF (RABBITMQ_FOUND)
         backends/rabbitmq.cpp
     )
 ENDIF(RABBITMQ_FOUND)
+
+IF (ORACLE_FOUND)
+    SET(SOURCES ${SOURCES}
+        backends/oracle.cpp
+    )
+ENDIF(ORACLE_FOUND)

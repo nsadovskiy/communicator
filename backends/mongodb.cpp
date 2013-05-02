@@ -13,8 +13,8 @@ using std::ostringstream;
  *
  *
  **/
-mongodb_backend_t::mongodb_backend_t(const std::string & login, const std::string & password, const std::string & path) :
-    store_backend_t(login, password, path),
+communicator::backend::mongodb_backend_t::mongodb_backend_t(const std::string & login, const std::string & password, const std::string & path) :
+    base_impl_t(login, password, path),
     // server_ip_(server_ip),
     connection_(true, nullptr, 0) {
 
@@ -31,7 +31,7 @@ mongodb_backend_t::mongodb_backend_t(const std::string & login, const std::strin
  *
  *
  **/
-mongodb_backend_t::~mongodb_backend_t() {
+communicator::backend::mongodb_backend_t::~mongodb_backend_t() {
 
 }
 
@@ -39,7 +39,7 @@ mongodb_backend_t::~mongodb_backend_t() {
  *
  *
  **/
-void mongodb_backend_t::save_messages_impl(const std::string & msg) {
+void communicator::backend::mongodb_backend_t::save_message_impl(const std::string & msg) {
 
     try {
 

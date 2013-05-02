@@ -5,7 +5,13 @@
 #ifndef CONFIG_HPP
 #define CONFIG_HPP
 
+#define MAJOR_VERSION @MAJOR_VERSION@
+#define MINOR_VERSION @MINOR_VERSION@
+#define PATCH_VERSION @PATCH_VERSION@
+#define BUILD_DATE "@BUILD_DATE@"
+
 #cmakedefine MongoDB_FOUND
 #cmakedefine RABBITMQ_FOUND
+#cmakedefine ORACLE_FOUND
 
 #endif // CONFIG_HPP

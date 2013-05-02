@@ -9,9 +9,11 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "client.hpp"
+#include "backends/factory.hpp"
 #include "backends/mongodb.hpp"
 #include "backends/rabbitmq.hpp"
 
+using std::string;
 using std::distance;
 using std::remove_if;
 using boost::asio::ip::tcp;
@@ -22,43 +24,64 @@ using boost::posix_time::seconds;
  *
  *
  **/
-server_t::server_t(const char * bind_addr, const char * port, size_t num_workers, create_func_type create_func) :
+communicator::server_t::server_t(const settings_t & settings, create_func_type create_func) :
     log_(log4cplus::Logger::getInstance("main")),
     interval_(5),
-    num_workers_(num_workers),
+    num_workers_(settings.num_workers),
     create_client_func_(create_func),
     signals_(io_service_),
     acceptor_(io_service_),
     timer_(io_service_, seconds(interval_)),
-    store_backend_(new mongodb_backend_t("", "", "10.10.3.25:27017")) {
+    store_backend_(backend::factory::create(settings.store.protocol, settings.store.username, settings.store.password, settings.store.path)) {
 
-    assert(create_client_func_);
+    LOG4CPLUS_TRACE(log_, "Initializing server");
 
+    LOG4CPLUS_TRACE(log_, "Starting starage backend");
     store_backend_->start();
+    bind_signals();
+    start_listen(settings.listen.ip_addr, settings.listen.port);
+}
+
+/**
+ *
+ *
+ **/
+void communicator::server_t::bind_signals() {
+
+    LOG4CPLUS_TRACE(log_, "Binding interruption signal handler");
 
     signals_.add(SIGINT);
     signals_.add(SIGTERM);
-#if defined(SIGQUIT)
-    signals_.add(SIGQUIT);
-#endif
+#   if defined(SIGQUIT)
+        signals_.add(SIGQUIT);
+#   endif
+
+    LOG4CPLUS_TRACE(log_, "Start waiting for interruption signal");
     signals_.async_wait(
             [this](const error_code &, const int &) {
                 this->handle_stop();
             }
         );
+}
 
-    timer_.async_wait(
-            [this](const error_code & error) {
-                this->handle_timer(error);
-            }
-        );
+/**
+ *
+ *
+ **/
+void communicator::server_t::start_listen(const string & ip_addr, const string & port) {
+
+    LOG4CPLUS_TRACE(log_, "Initializing listening socket");
 
     tcp::resolver resolver(io_service_);
-    tcp::resolver::query query(bind_addr, port);
+    tcp::resolver::query query(ip_addr, port);
     tcp::endpoint endpoint = *resolver.resolve(query);
+
     acceptor_.open(endpoint.protocol());
     acceptor_.set_option(tcp::acceptor::reuse_address(true));
     acceptor_.bind(endpoint);
+
+    LOG4CPLUS_TRACE(log_, "Start listening");
+
     acceptor_.listen();
 
     start_accept();
@@ -68,7 +91,53 @@ server_t::server_t(const char * bind_addr, const char * port, size_t num_workers
  *
  *
  **/
-server_t::~server_t() {
+// communicator::server_t::server_t(const char * bind_addr, const char * port, size_t num_workers, create_func_type create_func) :
+//     log_(log4cplus::Logger::getInstance("main")),
+//     interval_(5),
+//     num_workers_(num_workers),
+//     create_client_func_(create_func),
+//     signals_(io_service_),
+//     acceptor_(io_service_),
+//     timer_(io_service_, seconds(interval_)),
+//     store_backend_(new communicator::backend::mongodb_backend_t("", "", "10.10.3.25:27017")) {
+
+//     assert(create_client_func_);
+
+//     store_backend_->start();
+
+//     signals_.add(SIGINT);
+//     signals_.add(SIGTERM);
+// #if defined(SIGQUIT)
+//     signals_.add(SIGQUIT);
+// #endif
+//     signals_.async_wait(
+//             [this](const error_code &, const int &) {
+//                 this->handle_stop();
+//             }
+//         );
+
+//     timer_.async_wait(
+//             [this](const error_code & error) {
+//                 this->handle_timer(error);
+//             }
+//         );
+
+//     tcp::resolver resolver(io_service_);
+//     tcp::resolver::query query(bind_addr, port);
+//     tcp::endpoint endpoint = *resolver.resolve(query);
+//     acceptor_.open(endpoint.protocol());
+//     acceptor_.set_option(tcp::acceptor::reuse_address(true));
+//     acceptor_.bind(endpoint);
+//     acceptor_.listen();
+
+//     start_accept();
+// }
+
+/**
+ *
+ *
+ **/
+communicator::server_t::~server_t() {
     store_backend_->stop();
 }
 
@@ -76,7 +145,7 @@ server_t::~server_t() {
  *
  *
  **/
-void server_t::run() {
+void communicator::server_t::run() {
     io_service_.run();
 }
 
@@ -84,11 +153,13 @@ void server_t::run() {
  *
  *
  **/
-void server_t::start_accept() {
+void communicator::server_t::start_accept() {
+
+    LOG4CPLUS_TRACE(log_, "Starting async accept operation");
 
     assert(create_client_func_);
 
-    client_type client(client_t::create(io_service_, create_client_func_(), *store_backend_));
+    client_pointer_type client(client_t::create(io_service_, create_client_func_(), *store_backend_));
     acceptor_.async_accept(
         client->get_socket(),
         [this, client](const error_code & error) {
@@ -101,7 +172,7 @@ void server_t::start_accept() {
  *
  *
  **/
-void server_t::handle_stop() {
+void communicator::server_t::handle_stop() {
     io_service_.stop();
     LOG4CPLUS_INFO(log_, "Bye!");
 }
@@ -110,7 +181,8 @@ void server_t::handle_stop() {
  *
  *
  **/
-void server_t::handle_timer(const error_code & error) {
+void communicator::server_t::handle_timer(const error_code & error) {
+
     if (!error) {
         timer_.expires_at(timer_.expires_at() + seconds(interval_));
         timer_.async_wait(
@@ -127,7 +199,7 @@ void server_t::handle_timer(const error_code & error) {
  *
  *
  **/
-void server_t::handle_accept(const error_code & error, client_type client) {
+void communicator::server_t::handle_accept(const error_code & error, client_pointer_type client) {
 
     LOG4CPLUS_DEBUG(log_, "Connection accepted");
 
@@ -150,13 +222,13 @@ void server_t::handle_accept(const error_code & error, client_type client) {
  *
  *
  **/
-void server_t::drop_unused_clients() {
+void communicator::server_t::drop_unused_clients() {
 
     lock_guard_type lock(mutex_);
     auto pos = remove_if(
             clients_.begin(),
             clients_.end(),
-            [](const client_type & client) {
+            [](const client_pointer_type & client) {
                 return !client->get_socket().is_open();
             }
         );

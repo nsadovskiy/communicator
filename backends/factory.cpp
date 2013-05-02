@@ -4,6 +4,7 @@
  **/
 #include "factory.hpp"
 #include <map>
+#include <stdexcept>
 #include "../config.h"
 
 #ifdef MongoDB_FOUND
@@ -14,14 +15,16 @@
 #   include "rabbitmq.hpp"
 #endif
 
-/**
- *
- *
- **/
+#ifdef ORACLE_FOUND
+#   include "oracle.hpp"
+#endif
+
+
 using std::map;
 using std::pair;
 using std::string;
 using boost::shared_ptr;
+using communicator::backend::base_impl_pointer_type;
 
 /**
  *
@@ -34,16 +37,16 @@ namespace {
      *
      **/
     template<class T>
-    shared_ptr<store_backend_t> creator(const std::string & login, const std::string & password, const std::string & path) {
-        return shared_ptr<store_backend_t>(new T(login, password, path));
+    base_impl_pointer_type creator(const std::string & login, const std::string & password, const std::string & path) {
+        return base_impl_pointer_type(new T(login, password, path));
     };
 
     template<>
-    shared_ptr<store_backend_t> creator<int>(const std::string &, const std::string &, const std::string &) {
-        return shared_ptr<store_backend_t>();
+    base_impl_pointer_type creator<int>(const std::string &, const std::string &, const std::string &) {
+        return base_impl_pointer_type();
     }
 
-    typedef shared_ptr<store_backend_t> (*creator_func_type)(const std::string &, const std::string &, const std::string &);
+    typedef base_impl_pointer_type (*creator_func_type)(const std::string &, const std::string &, const std::string &);
 };
 
 /**
@@ -52,24 +55,33 @@ namespace {
  **/
 namespace communicator {
     namespace backend {
+        namespace factory {
 
-        /**
-         *
-         *
-         **/
-        shared_ptr<store_backend_t> create(const std::string & protocol, const std::string & login, const std::string & password, const std::string & path) {
+            /**
+             *
+             *
+             **/
+            base_impl_pointer_type create(const std::string & protocol, const std::string & login, const std::string & password, const std::string & path) {
 
-            map<string, creator_func_type> backends {
-#               ifdef MongoDB_FOUND
-                    pair<string, creator_func_type>("mongo", creator<mongodb_backend_t>),
-#               endif
-#               ifdef RABBITMQ_FOUND
-                    pair<string, creator_func_type>("rabbit", creator<communicator::backend::rabbitmq_t>),
-#               endif
-                    pair<string, creator_func_type>("empty", creator<int>)
-            };
+                map<string, creator_func_type> backends {
+    #               ifdef MongoDB_FOUND
+                        pair<string, creator_func_type>("mongo", creator<mongodb_backend_t>),
+    #               endif
+    #               ifdef RABBITMQ_FOUND
+                        pair<string, creator_func_type>("rabbit", creator<communicator::backend::rabbitmq_t>),
+    #               endif
+    #               ifdef ORACLE_FOUND
+                        pair<string, creator_func_type>("oracle", creator<communicator::backend::oracle_t>),
+    #               endif
+                        pair<string, creator_func_type>("empty", creator<int>)
+                };
 
-            return shared_ptr<store_backend_t>();
+                if (backends.count(protocol) < 1) {
+                    throw std::invalid_argument("Specified storage backend not supported");
+                }
+
+                return backends[protocol](login, password, path);
+            }
         }
     }
 }
