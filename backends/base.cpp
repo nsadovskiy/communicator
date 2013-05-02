@@ -104,14 +104,23 @@ void communicator::backend::base_impl_t::work_proc() {
                 
                 LOG4CPLUS_DEBUG(log_, "Found " << messages.size() << " undelivered message(s)");
 
-                begin_batch(messages.size());
+                try {
 
-                for (auto msg : messages) {
-                    save_message_impl(msg);
-                    boost::this_thread::interruption_point();
+                    begin_batch(messages.size());
+
+                    for (auto msg : messages) {
+                        save_message_impl(msg);
+                        boost::this_thread::interruption_point();
+                    }
+
+                    end_batch();
+
+                } catch (const std::exception & e) {
+                    LOG4CPLUS_ERROR(log_, e.what());
+
+                } catch (...) {
+                    LOG4CPLUS_ERROR(log_, "Unknown error in worl_proc");
                 }
-
-                end_batch();
             
             } else { //if (!messages_.empty())
                 LOG4CPLUS_TRACE(log_, "No undelivered messages found");

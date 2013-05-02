@@ -41,6 +41,7 @@ namespace communicator {
 
         private:
             void parse_path();
+            void open_connection();
 
         private:
             virtual void begin_batch_impl(size_t num_messages);
@@ -51,6 +52,7 @@ namespace communicator {
             std::string server_;
             std::string port_;
             std::string service_name_;
+            std::string connection_string_;
             boost::shared_ptr<oracle::occi::Environment> environment_;
             boost::shared_ptr<oracle::occi::Connection> connection_;
         };
