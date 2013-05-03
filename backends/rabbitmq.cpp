@@ -30,6 +30,7 @@ communicator::backend::rabbitmq_t::~rabbitmq_t() {
  *
  **/
 void communicator::backend::rabbitmq_t::save_message_impl(const std::string & msg) {
+    // TODO: сделать реализацию
 }
 
 /**

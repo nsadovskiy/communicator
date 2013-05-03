@@ -34,6 +34,7 @@ communicator::backend::oracle_t::oracle_t(const std::string & login, const std::
  *
  **/
 communicator::backend::oracle_t::~oracle_t() {
+    LOG4CPLUS_INFO(get_log(), "Oracle backend terminated");
 }
 
 /**
@@ -73,7 +74,7 @@ void communicator::backend::oracle_t::open_connection() {
 
         if (!connection_) {
 
-            LOG4CPLUS_TRACE(get_log(), "Connecting Oracle at " << connection_string_ << " using login '" << get_login() << "' and password '******'");
+            LOG4CPLUS_DEBUG(get_log(), "Connecting Oracle at " << connection_string_ << " using login '" << get_login() << "' and password '******'");
             
             connection_.reset(
                     environment_->createConnection(get_login().c_str(), get_password().c_str(), connection_string_.c_str()),
@@ -115,7 +116,7 @@ void communicator::backend::oracle_t::open_connection() {
 
     } catch (...) {
         connection_.reset();
-        throw std::runtime_error("Unknown error while connecting Oracle");
+        throw std::runtime_error("Unexpected exception while connecting Oracle");
     }
 }
 
@@ -132,6 +133,30 @@ void communicator::backend::oracle_t::begin_batch_impl(size_t num_messages) {
  *
  **/
 void communicator::backend::oracle_t::save_message_impl(const std::string & msg) {
+
+    try {
+
+        LOG4CPLUS_TRACE(get_log(), "Saving message to Oracle " << msg);
+
+        shared_ptr<Statement> stmt(
+            connection_->createStatement("insert into omnicomm(message) values (:msg)"),
+            [this](Statement * stmt) {
+                this->connection_->terminateStatement(stmt);
+            }
+        );
+
+        stmt->setString(1, msg.c_str());
+        stmt->executeUpdate();
+
+    } catch (const SQLException & e) {
+        throw std::runtime_error(e.getMessage());
+
+    } catch (const std::exception & e) {
+        throw std::runtime_error(e.what());
+
+    } catch (...) {
+        throw std::runtime_error("Unexpected exception while storing message");
+    }
 }
 
 /**
@@ -139,6 +164,6 @@ void communicator::backend::oracle_t::save_message_impl(const std::string & msg)
  *
  **/
 void communicator::backend::oracle_t::end_batch_impl() {
-    LOG4CPLUS_TRACE(get_log(), "Closing Oracle connection");
+    LOG4CPLUS_TRACE(get_log(), "Commiting changes");
     connection_->commit();
 }

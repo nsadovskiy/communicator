@@ -94,39 +94,39 @@ void communicator::backend::base_impl_t::work_proc() {
 
         while (true) {
 
-            {
-                lock_guard_type lock(mutex_);
-                messages.assign(messages_.begin(), messages_.end());
-                messages_.clear();
-            }
-
-            if (!messages.empty()) {
-                
-                LOG4CPLUS_DEBUG(log_, "Found " << messages.size() << " undelivered message(s)");
-
-                try {
-
-                    begin_batch(messages.size());
-
-                    for (auto msg : messages) {
-                        save_message_impl(msg);
-                        boost::this_thread::interruption_point();
-                    }
-
-                    end_batch();
-
-                } catch (const std::exception & e) {
-                    LOG4CPLUS_ERROR(log_, e.what());
-
-                } catch (...) {
-                    LOG4CPLUS_ERROR(log_, "Unknown error in worl_proc");
-                }
-            
-            } else { //if (!messages_.empty())
-                LOG4CPLUS_TRACE(log_, "No undelivered messages found");
-            } // if (!messages_.empty())
-
             boost::this_thread::sleep(boost::posix_time::seconds(5));
+
+            try {
+
+                begin_batch(messages.size());
+
+                {
+                    lock_guard_type lock(mutex_);
+                    messages.assign(messages_.begin(), messages_.end());
+                    messages_.clear();
+                }
+
+                if (!messages.empty()) {
+                    
+                    LOG4CPLUS_DEBUG(log_, "Found " << messages.size() << " undelivered message(s)");
+
+                        for (auto msg : messages) {
+                            save_message_impl(msg);
+                            boost::this_thread::interruption_point();
+                        }
+                
+                } else { //if (!messages_.empty())
+                    LOG4CPLUS_TRACE(log_, "No undelivered messages found");
+                } // if (!messages_.empty())
+
+                end_batch();
+
+            } catch (const std::exception & e) {
+                LOG4CPLUS_ERROR(log_, e.what());
+
+            } catch (...) {
+                LOG4CPLUS_ERROR(log_, "Unknown backend error");
+            }
         }
 
     } catch(boost::thread_interrupted &) {
