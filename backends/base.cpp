@@ -10,10 +10,12 @@
  *
  **/
 communicator::backend::base_impl_t::base_impl_t(const std::string & login, const std::string & password, const std::string & path) :
+    max_messages_(4096),
     login_(login),
     password_(password),
     path_(path),
-    log_(log4cplus::Logger::getInstance("main")) {
+    log_(log4cplus::Logger::getInstance("main")),
+    messages_(max_messages_) {
 }
 
 /**
@@ -40,9 +42,15 @@ size_t communicator::backend::base_impl_t::add_message(const std::string & msg) 
 
     LOG4CPLUS_TRACE(log_, "Enqueuing message [" << msg << "]");
 
-    lock_guard_type lock(mutex_);
+    {
+        lock_guard_type lock(mutex_);
 
-    messages_.push_back(msg);
+        if (messages_.size() >= max_messages_) {
+            throw std::overflow_error("Message buffer capacity exceeded");
+        }
+
+        messages_.push_back(msg);
+    }
 
     return messages_.size();
 }

@@ -45,6 +45,14 @@ namespace communicator {
                 return messages_.size();
             }
 
+            size_t get_capacity() const {
+                return max_messages_;
+            }
+
+            void set_capacity(size_t capacity) {
+                max_messages_ = capacity;
+            }
+
             void start();
             void stop();
 
@@ -79,6 +87,7 @@ namespace communicator {
             virtual void end_batch_impl();
 
         private:
+            size_t max_messages_;
             std::string login_;
             std::string password_;
             std::string path_;

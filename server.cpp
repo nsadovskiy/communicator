@@ -91,52 +91,6 @@ void communicator::server_t::start_listen(const string & ip_addr, const string &
  *
  *
  **/
-// communicator::server_t::server_t(const char * bind_addr, const char * port, size_t num_workers, create_func_type create_func) :
-//     log_(log4cplus::Logger::getInstance("main")),
-//     interval_(5),
-//     num_workers_(num_workers),
-//     create_client_func_(create_func),
-//     signals_(io_service_),
-//     acceptor_(io_service_),
-//     timer_(io_service_, seconds(interval_)),
-//     store_backend_(new communicator::backend::mongodb_backend_t("", "", "10.10.3.25:27017")) {
-
-//     assert(create_client_func_);
-
-//     store_backend_->start();
-
-//     signals_.add(SIGINT);
-//     signals_.add(SIGTERM);
-// #if defined(SIGQUIT)
-//     signals_.add(SIGQUIT);
-// #endif
-//     signals_.async_wait(
-//             [this](const error_code &, const int &) {
-//                 this->handle_stop();
-//             }
-//         );
-
-//     timer_.async_wait(
-//             [this](const error_code & error) {
-//                 this->handle_timer(error);
-//             }
-//         );
-
-//     tcp::resolver resolver(io_service_);
-//     tcp::resolver::query query(bind_addr, port);
-//     tcp::endpoint endpoint = *resolver.resolve(query);
-//     acceptor_.open(endpoint.protocol());
-//     acceptor_.set_option(tcp::acceptor::reuse_address(true));
-//     acceptor_.bind(endpoint);
-//     acceptor_.listen();
-
-//     start_accept();
-// }
-
-/**
- *
- *
- **/
 communicator::server_t::~server_t() {
     store_backend_->stop();
 }

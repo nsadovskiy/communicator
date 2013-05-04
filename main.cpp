@@ -86,7 +86,7 @@ int main(int argc, const char * argv[]) {
             exit(1);
         }
 
-        communicator::server_t server(settings, omnicomm::protocol_t::create);
+        communicator::server_t server(settings, omnicomm::transport_protocol_t::create);
         server.run();
 
     } catch (const std::exception & e) {

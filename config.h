@@ -8,7 +8,7 @@
 #define MAJOR_VERSION 0
 #define MINOR_VERSION 1
 #define PATCH_VERSION 0
-#define BUILD_DATE "03.05.2013 08:52:07"
+#define BUILD_DATE "04.05.2013 14:40:58"
 
 #define MongoDB_FOUND
 #define RABBITMQ_FOUND
