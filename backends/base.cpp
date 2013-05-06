@@ -3,6 +3,7 @@
  *
  **/
 #include "base.hpp"
+#include <log4cplus/loggingmacros.h>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 /**

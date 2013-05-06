@@ -6,6 +6,8 @@
 #include "client.hpp"
 #include "protocol_base.hpp"
 
+#include <log4cplus/loggingmacros.h>
+
 using std::basic_ostream;
 using boost::asio::buffer;
 using boost::asio::io_service;

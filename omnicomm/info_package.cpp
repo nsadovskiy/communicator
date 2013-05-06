@@ -4,6 +4,8 @@
  **/
 #include <sstream>
 #include <iomanip>
+#include <log4cplus/loggingmacros.h>
+
 #include "utils.hpp"
 #include "../utils.hpp"
 #include "message.pb.h"

@@ -11,10 +11,15 @@
 
 #include <log4cplus/logger.h>
 #include <log4cplus/configurator.h>
+#include <log4cplus/loggingmacros.h>
 
 #include "config.h"
 #include "server.hpp"
 #include "omnicomm/protocol.hpp"
+
+#include <occi.h>
+
+using namespace oracle::occi;
 
 using std::cerr;
 
@@ -47,11 +52,21 @@ bool fill_settings(int argc, const char * argv[], communicator::settings_t & set
     return true;
 }
 
+auto env = Environment::createEnvironment(Environment::DEFAULT);
+
 /**
  *
  *
  **/
 int main(int argc, const char * argv[]) {
+
+	
+
+	auto conn = env->createConnection(
+					"system",
+					"ORA5assw",
+					"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=10.10.3.23)(PORT=1521))(CONNECT_DATA=(SID=v3)))"
+				);
 
     log4cplus::PropertyConfigurator::doConfigure("log4cplus.config");
     const log4cplus::Logger logger = log4cplus::Logger::getInstance("main");

@@ -18,18 +18,20 @@ FIND_PATH(ORACLE_INCLUDE_DIRS oci.h
 
 FIND_LIBRARY(
         ORACLE_CLNTSH_LIBRARY
-        NAMES clntsh
+        NAMES clntsh oci
         PATHS
             /usr
             ${ORACLE_HOME}
+            ${ORACLE_HOME}/oci/lib/msvc
     )
 
 FIND_LIBRARY(
         ORACLE_OCCI_LIBRARY
-        NAMES occi
+        NAMES occi oraocci11
         PATHS
             /usr
             ${ORACLE_HOME}
+            ${ORACLE_HOME}/oci/lib/msvc
     )
 
 SET(ORACLE_LIBRARIES

@@ -4,12 +4,22 @@
 #  LOG4CPLUS_INCLUDE_DIRS - The Log4cplus include directories
 #  LOG4CPLUS_LIBRARIES - The libraries needed to use Log4cplus
 
+message("Log4cplus - " ${LOG4CLPUS_ROOT_FOLDER})
 
-find_path(LOG4CPLUS_INCLUDE_DIR log4cplus/config.hxx
-          PATH_SUFFIXES log4cplus )
+find_path(LOG4CPLUS_INCLUDE_DIR 
+		NAMES log4cplus/config.hxx
+		PATHS
+          ${LOG4CLPUS_ROOT_FOLDER}
+          ${LOG4CLPUS_ROOT_FOLDER}/include
+    )
 
-find_library(LOG4CPLUS_LIBRARY NAMES log4cplus
-             PATHS /usr)
+find_library(LOG4CPLUS_LIBRARY
+		NAMES log4cplus log4cplusU
+        PATHS
+        	/usr
+        	${LOG4CLPUS_ROOT_FOLDER}
+        	${LOG4CLPUS_ROOT_FOLDER}/lib
+    )
 
 set(LOG4CPLUS_LIBRARIES ${LOG4CPLUS_LIBRARY} )
 set(LOG4CPLUS_INCLUDE_DIRS ${LOG4CPLUS_INCLUDE_DIR} )

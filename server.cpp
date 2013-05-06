@@ -6,12 +6,12 @@
 
 #include <cassert>
 #include <algorithm>
+#include <log4cplus/loggingmacros.h>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "client.hpp"
+#include "backends\base.hpp"
 #include "backends/factory.hpp"
-#include "backends/mongodb.hpp"
-#include "backends/rabbitmq.hpp"
 
 using std::string;
 using std::distance;

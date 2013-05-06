@@ -45,7 +45,11 @@ namespace omnicomm {
         unsigned char prefix;       // Префикс транспортного сообщения 0xC0
         unsigned char cmd;          // Команда
         unsigned short data_len;    // Размер поля data
-        unsigned char data[0];      // Данные
+        // unsigned char data[0];      // Данные
+
+		const unsigned char * get_data() const {
+			return reinterpret_cast<const unsigned char *>(data_len) + sizeof(data_len);
+		}
 
         transport_header_t(uchar command, unsigned short len):
             prefix(0xC0),
@@ -54,7 +58,8 @@ namespace omnicomm {
         }
 
         unsigned short get_crc() const {
-            return static_cast<ushort>(data[data_len]) << 8 | data[data_len + 1];
+			return static_cast<ushort>(get_data()[data_len]) << 8 | get_data()[data_len + 1];
+            // return static_cast<ushort>(data[data_len]) << 8 | data[data_len + 1];
         }
 
         unsigned short calc_crc() const {

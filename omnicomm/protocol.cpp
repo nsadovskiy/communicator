@@ -7,6 +7,7 @@
 #include <cassert>
 #include <iomanip>
 #include <algorithm>
+#include <log4cplus/loggingmacros.h>
 
 #include "utils.hpp"
 #include "../utils.hpp"
@@ -109,7 +110,7 @@ void omnicomm::transport_protocol_t::recive_impl(const unsigned char * data, siz
                     << hex
                     << " crc=" << hdr->get_crc()
                 );
-            LOG4CPLUS_TRACE(log_, "   data: [" << to_hex_string(hdr->data, hdr->data_len).c_str() << "]");
+            LOG4CPLUS_TRACE(log_, "   data: [" << to_hex_string(hdr->get_data(), hdr->data_len).c_str() << "]");
 
             process_message(*hdr);
 

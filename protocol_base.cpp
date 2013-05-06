@@ -4,6 +4,8 @@
  **/
 #include "protocol_base.hpp"
 
+#include <log4cplus/loggingmacros.h>
+
 /**
  *
  *

@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <boost/regex.hpp>
 #include <boost/thread.hpp>
+#include <log4cplus/loggingmacros.h>
 
 using boost::shared_ptr;
 using namespace oracle::occi;
@@ -75,6 +76,19 @@ void communicator::backend::oracle_t::open_connection() {
         if (!connection_) {
 
             LOG4CPLUS_DEBUG(get_log(), "Connecting Oracle at " << connection_string_ << " using login '" << get_login() << "' and password '******'");
+
+			using std::string;
+
+			const string login = get_login();
+			const string password = get_password();
+			const string connection_string = connection_string_;
+
+			auto env = Environment::createEnvironment(Environment::DEFAULT);
+			auto conn = env->createConnection(
+					"system",
+					"ORA5assw",
+					"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=10.10.3.23)(PORT=1521))(CONNECT_DATA=(SID=v3)))"
+				);
             
             connection_.reset(
                     environment_->createConnection(get_login().c_str(), get_password().c_str(), connection_string_.c_str()),
