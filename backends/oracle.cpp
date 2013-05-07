@@ -137,7 +137,10 @@ void communicator::backend::oracle_t::save_message_impl(const std::string & msg)
 
     try {
 
-        LOG4CPLUS_TRACE(get_log(), "Saving message to Oracle " << msg);
+        std::ostringstream message;
+        message << "<Message " << msg << "/>";
+
+        LOG4CPLUS_TRACE(get_log(), "Saving message to Oracle " << message.str());
 
         shared_ptr<Statement> stmt(
             connection_->createStatement("insert into omnicomm(message) values (:msg)"),
@@ -146,7 +149,7 @@ void communicator::backend::oracle_t::save_message_impl(const std::string & msg)
             }
         );
 
-        stmt->setString(1, msg.c_str());
+        stmt->setString(1, message.str().c_str());
         stmt->executeUpdate();
 
     } catch (const SQLException & e) {

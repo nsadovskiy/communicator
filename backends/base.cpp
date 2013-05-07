@@ -15,8 +15,9 @@ communicator::backend::base_impl_t::base_impl_t(const std::string & login, const
     login_(login),
     password_(password),
     path_(path),
-    log_(log4cplus::Logger::getInstance("main")),
-    messages_(max_messages_) {
+    log_(log4cplus::Logger::getInstance("main")) {
+
+    messages_.reserve(max_messages_);
 }
 
 /**

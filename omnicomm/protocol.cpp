@@ -29,6 +29,38 @@ namespace stuff_state {
         possible_stuff
     };
 }
+/**
+ *
+ *
+ **/
+omnicomm::transport_protocol_t::counterer_type omnicomm::transport_protocol_t::counterer_;
+boost::mutex omnicomm::transport_protocol_t::mutex_;
+
+/**
+ *
+ *
+ **/
+unsigned omnicomm::transport_protocol_t::get_last_counter(unsigned controller_id) {
+
+    unsigned result = 0;
+
+    lock_guard_type lock(mutex_);
+
+    if (counterer_.count(controller_id) > 0) {
+        result = counterer_[controller_id];
+    }
+
+    return result;
+}
+
+/**
+ *
+ *
+ **/
+void omnicomm::transport_protocol_t::set_last_counter(unsigned controller_id, unsigned counter) {
+    lock_guard_type lock(mutex_);
+    counterer_[controller_id] = counter;
+}
 
 /**
  *
@@ -66,32 +98,38 @@ void omnicomm::transport_protocol_t::recive_impl(const unsigned char * data, siz
     LOG4CPLUS_TRACE(log_, "Destuffed data: [" << to_hex_string(&buffer_[0], buffer_.size()).c_str() << "]");
 
     ptrdiff_t remain_len;
-    array_type::iterator start= buffer_.begin();
+    array_type::iterator start = buffer_.begin(), end = buffer_.begin();
 
     while (start != buffer_.end()) {
-        
+
         start = find(start, buffer_.end(), 0xc0);
         
         if (start != buffer_.end()) {
 
             remain_len = distance(start, buffer_.end());
 
+            LOG4CPLUS_TRACE(log_, "Verifying header length");
             if (remain_len < static_cast<ptrdiff_t>(sizeof(transport_header_t))) {
                 LOG4CPLUS_TRACE(log_, "Message length less than header size");
                 break;
             }
 
+            LOG4CPLUS_TRACE(log_, "Verifying full length");
             const transport_header_t * hdr = reinterpret_cast<const transport_header_t *>(&start[0]);
 
             if (remain_len < static_cast<ptrdiff_t>(hdr->get_full_length())) {
-                LOG4CPLUS_TRACE(log_, "Message length less than full size");
+                LOG4CPLUS_TRACE(log_, "Message length less than full size. Header lenght=" << hdr->get_full_length() << " but readed " << remain_len << " bytes");
                 break;
             }
 
+            LOG4CPLUS_TRACE(log_, "Verifying checksum");
             if (!hdr->check_crc()) {
-                LOG4CPLUS_WARN(log_, "Checksum error. Message ignored.");
-                ++start;
-                continue;
+                LOG4CPLUS_WARN(log_, "Checksum error");
+                get_manipulator()->stop();
+                break;
+                // ++start;
+                // end = start;
+                // continue;
             } else {
                 LOG4CPLUS_TRACE(log_, "Checksum OK");
             }
@@ -115,10 +153,13 @@ void omnicomm::transport_protocol_t::recive_impl(const unsigned char * data, siz
             process_message(*hdr);
 
             start += hdr->get_full_length();
+            end = start;
         }
     }
 
-    buffer_.erase(buffer_.begin(), start);
+    LOG4CPLUS_TRACE(log_, "Dropping " << std::distance(buffer_.begin(), start) << " bytes");
+    buffer_.erase(buffer_.begin(), end);
+    LOG4CPLUS_TRACE(log_, "Remain after dropping: [" << to_hex_string(&buffer_[0], buffer_.size()).c_str() << "]");
 }
 
 /**
@@ -127,26 +168,51 @@ void omnicomm::transport_protocol_t::recive_impl(const unsigned char * data, siz
  **/
 void omnicomm::transport_protocol_t::process_message(const transport_header_t & hdr) {
 
-    switch (hdr.cmd) {
+    try {
 
-        case tm_code::c_controller_ident:
-            process_controller_ident(hdr);
-            break;
+        switch (hdr.cmd) {
 
-        case tm_code::c_current_data:
-            process_current_data(hdr);
-            break;
+            case tm_code::c_controller_ident:
+                process_controller_ident(hdr);
+                break;
 
-        case tm_code::c_archive_data:
-            process_archive_data(hdr);
-            break;
+            case tm_code::c_current_data:
+                process_current_data(hdr);
+                break;
 
-        case tm_code::c_delete_confirm:
-            break;
+            case tm_code::c_archive_data:
+                process_archive_data(hdr);
+                break;
 
-        default:
-            break;
+            case tm_code::c_delete_confirm:
+                process_delete_confirmation(hdr);
+                break;
+
+            default:
+                break;
+        }
+
+    } catch (const std::exception & e) {
+        LOG4CPLUS_ERROR(log_, e.what());
+        get_manipulator()->stop();
+        throw;
+
+    } catch (...) {
+        LOG4CPLUS_ERROR(log_, "[omnicomm::transport_protocol_t::process_message] Unexpected exception");
+        get_manipulator()->stop();
+        throw;
     }
+}
+
+/**
+ *
+ *
+ **/
+void omnicomm::transport_protocol_t::process_delete_confirmation(const transport_header_t & hdr) {
+
+    const delete_confirmation_t & msg = static_cast<const delete_confirmation_t &>(hdr);
+
+    LOG4CPLUS_TRACE(log_, "delete_data_confirmation [message=" << msg.mes_number << "]");
 }
 
 /**
@@ -162,9 +228,13 @@ void omnicomm::transport_protocol_t::process_controller_ident(const transport_he
     controller_id_ = msg.controller_id;
     firmware_version_ = msg.firmware_version;
 
-    LOG4CPLUS_INFO(log_, "controller_ident[controller_id=" << msg.controller_id << ", firmware version=" << msg.firmware_version << "]");
+    unsigned last_counter = get_last_counter(controller_id_);
+    if (last_counter > 0) {
+        ++last_counter;
+    }
+    LOG4CPLUS_INFO(log_, "controller_ident[controller_id=" << msg.controller_id << ", firmware version=" << msg.firmware_version << ", last recieved id=" << last_counter << "]");
 
-    data_request_t request(0);
+    data_request_t request(last_counter);
     send(reinterpret_cast<const unsigned char *>(&request), sizeof(data_request_t));
 }
 
@@ -176,18 +246,21 @@ void omnicomm::transport_protocol_t::process_archive_data(const transport_header
 
     const data_response_t & msg = static_cast<const data_response_t &>(hdr);
 
-    msg.check_length();
-
-    LOG4CPLUS_TRACE(log_, "archive_data_response[last_mes_number=" << msg.last_mes_number << ", first_mes_time=" << omnicomm::otime_to_string(msg.first_mes_time) << " priority=" << static_cast<int>(msg.priority) << "]");
-
-    if (0 == msg.get_im_length()) {
-        LOG4CPLUS_TRACE(log_, "archive download completed successful");
+    if (0 == msg.data_len) {
+        unsigned last_counter = get_last_counter(controller_id_);
+        LOG4CPLUS_TRACE(log_, "archive download completed successful. Deleting archive data till message " << last_counter);
+        delete_data_t request(last_counter);
+        send(reinterpret_cast<const unsigned char *>(&request), sizeof(data_request_t));
 
     } else {
 
+        msg.check_length();
+
+        LOG4CPLUS_TRACE(log_, "archive_data_response[last_mes_number=" << msg.last_mes_number << ", first_mes_time=" << omnicomm::otime_to_string(msg.first_mes_time) << " priority=" << static_cast<int>(msg.priority) << "]");
         LOG4CPLUS_TRACE(log_, "archive_data_response[data=[" << to_hex_string(msg.im_data, msg.get_im_length()) << "]]");
 
         process_info_messages(msg);
+        set_last_counter(controller_id_, msg.last_mes_number);
     }
 }
 
@@ -205,6 +278,11 @@ void omnicomm::transport_protocol_t::process_current_data(const transport_header
     LOG4CPLUS_TRACE(log_, "current_data_response[data=[" << to_hex_string(msg.im_data, msg.get_im_length()) << "]]");
 
     process_info_messages(msg);
+    set_last_counter(controller_id_, msg.last_mes_number);
+
+    LOG4CPLUS_TRACE(log_, "Send delete_data[id=" << msg.last_mes_number << "]");
+    delete_data_t request(msg.last_mes_number);
+    send(reinterpret_cast<const unsigned char *>(&request), sizeof(delete_data_t));
 }
 
 /**
@@ -215,7 +293,7 @@ void omnicomm::transport_protocol_t::process_info_messages(const data_response_t
 
     info_protocol_t::message_array_type messages;
 
-    try {
+    // try {
 
         // omnicomm::info_protocol_t::array_type result = info_protocol_.parse(hdr, messages);
         omnicomm::parse_info_package(msg, messages);
@@ -231,12 +309,12 @@ void omnicomm::transport_protocol_t::process_info_messages(const data_response_t
             get_manipulator()->get_backend().add_message(msg);
         }
 
-        delete_data_t request(msg.last_mes_number);
-        send(reinterpret_cast<const unsigned char *>(&request), sizeof(data_request_t));
+        // delete_data_t request(msg.last_mes_number);
+        // send(reinterpret_cast<const unsigned char *>(&request), sizeof(data_request_t));
 
-    } catch(const exception & e) {
-        LOG4CPLUS_ERROR(log_, e.what());
-    }
+    // } catch(const exception & e) {
+    //     LOG4CPLUS_ERROR(log_, e.what());
+    // }
 }
 
 /**

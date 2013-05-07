@@ -97,7 +97,7 @@ void omnicomm::parse_info_package(const data_response_t & msg_pack, message_arra
             LOG4CPLUS_TRACE(mainLog, "message [mID=" << hex << message.mid(i) << "]");
 
             data.clear();
-            // extract(message.mid(i), message, data);
+            extract(message.mid(i), message, data);
 
             str.str("");
             str.clear();

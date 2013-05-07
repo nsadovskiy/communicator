@@ -84,7 +84,7 @@ void client_t::send(const unsigned char * data, size_t len) {
                 this->handle_write(error, len);
             }
         );
-    LOG4CPLUS_TRACE(log_, "Write complete");
+    LOG4CPLUS_TRACE(log_, "Sync write started");
 }
 
 /**
@@ -126,5 +126,5 @@ void client_t::handle_read(const error_code & error, size_t len) {
  *
  **/
 void client_t::handle_write(const boost::system::error_code & ec, size_t bytes_transferred) {
-    LOG4CPLUS_TRACE(log_, "Write succeded");
+    LOG4CPLUS_TRACE(log_, "Async write finished");
 }

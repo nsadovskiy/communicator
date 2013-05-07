@@ -48,7 +48,7 @@ namespace omnicomm {
         // unsigned char data[0];      // Данные
 
 		const unsigned char * get_data() const {
-			return reinterpret_cast<const unsigned char *>(data_len) + sizeof(data_len);
+			return reinterpret_cast<const unsigned char *>(&data_len) + sizeof(data_len);
 		}
 
         transport_header_t(uchar command, unsigned short len):
@@ -86,7 +86,7 @@ namespace omnicomm {
         }
 
         void check_length() const {
-            if (sizeof(transport_header_t) + data_len < sizeof(T)) {
+            if (sizeof(transport_header_t) + data_len + 2 < sizeof(T)) {
                 throw std::length_error("Wrong message size");
             }
         }
@@ -141,6 +141,15 @@ namespace omnicomm {
         delete_data_t(unsigned int mes_number) :
             mes_number(mes_number) {
         }
+    };
+
+    /**
+     * Сообщение 0x88 "подтверждение удаления записей архива"
+     *
+     **/
+    struct delete_confirmation_t : public transport_message_t<tm_code::s_delete_data, data_request_t> {
+        
+        unsigned int mes_number;     // Сквозной номер записи
     };
 
     /**
