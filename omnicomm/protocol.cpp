@@ -4,6 +4,7 @@
  **/
 #include "protocol.hpp"
 
+#include <sstream>
 #include <cassert>
 #include <iomanip>
 #include <algorithm>
@@ -192,7 +193,7 @@ void omnicomm::transport_protocol_t::process_message(const transport_header_t & 
                 break;
         }
 
-    } catch (const std::exception & e) {
+    } catch (const exception & e) {
         LOG4CPLUS_ERROR(log_, e.what());
         get_manipulator()->stop();
         throw;
@@ -305,8 +306,13 @@ void omnicomm::transport_protocol_t::process_info_messages(const data_response_t
         //     send(&result[0], result.size());
         // }
 
+        std::ostringstream message;
+
         for (auto msg: messages) {
-            get_manipulator()->get_backend().add_message(msg);
+            message.str("");
+            message.clear();
+            message << "controller_id=\"" << controller_id_ << "\" firmware=\"" << firmware_version_ << "\" " << msg;
+            get_manipulator()->get_backend().add_message(message.str());
         }
 
         // delete_data_t request(msg.last_mes_number);

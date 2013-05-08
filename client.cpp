@@ -8,6 +8,7 @@
 
 #include <log4cplus/loggingmacros.h>
 
+using std::exception;
 using std::basic_ostream;
 using boost::asio::buffer;
 using boost::asio::io_service;
@@ -47,15 +48,25 @@ client_t::~client_t() {
  *
  **/
 void client_t::start() {
-    impl_->init(this);
-    LOG4CPLUS_INFO(log_, "New connection from " << socket_.remote_endpoint());
-    socket_.async_read_some(buffer(async_buffer_),
-            strand_.wrap(
-                [this](const error_code & error, size_t len) {
-                    this->handle_read(error, len);
-                }
-            )
-        );
+
+    try {
+    
+        impl_->init(this);
+        LOG4CPLUS_INFO(log_, "New connection from " << socket_.remote_endpoint());
+        socket_.async_read_some(buffer(async_buffer_),
+                strand_.wrap(
+                    [this](const error_code & error, size_t len) {
+                        this->handle_read(error, len);
+                    }
+                )
+            );
+
+    } catch(const exception & e) {
+        LOG4CPLUS_ERROR(log_, e.what());
+
+    } catch (...) {
+        LOG4CPLUS_ERROR(log_, "Unexpected exception");
+    }
 }
 
 /**
@@ -63,8 +74,18 @@ void client_t::start() {
  *
  **/
 void client_t::stop() {
-    LOG4CPLUS_INFO(log_, "Client " << socket_.remote_endpoint() << " disconnected");
-    socket_.close();
+    
+    try {
+    
+        LOG4CPLUS_INFO(log_, "Client " << socket_.remote_endpoint() << " disconnected");
+        socket_.close();
+    
+    } catch(const exception & e) {
+        LOG4CPLUS_ERROR(log_, e.what());
+
+    } catch (...) {
+        LOG4CPLUS_ERROR(log_, "Unexpected exception");
+    }
 }
 
 /**
@@ -78,13 +99,20 @@ void client_t::send(const unsigned char * data, size_t len) {
     // LOG4CPLUS_INFO(log_, "   client_t::send: [" << to_hex_string(data, len).c_str() << "]");
     // LOG4CPLUS_INFO(log_, "   client_t::send: len=" << len);
     // LOG4CPLUS_INFO(log_, "   client_t::send: [" << data[0] << "]");
-    
-    socket_.async_send(buffer(data, len),
-            [this](const error_code & error, size_t len) {
-                this->handle_write(error, len);
-            }
-        );
-    LOG4CPLUS_TRACE(log_, "Sync write started");
+    try {
+        socket_.async_send(buffer(data, len),
+                [this](const error_code & error, size_t len) {
+                    this->handle_write(error, len);
+                }
+            );
+        LOG4CPLUS_TRACE(log_, "Sync write started");
+
+    } catch(const exception & e) {
+        LOG4CPLUS_ERROR(log_, e.what());
+
+    } catch (...) {
+        LOG4CPLUS_ERROR(log_, "Unexpected exception");
+    }
 }
 
 /**
@@ -93,31 +121,40 @@ void client_t::send(const unsigned char * data, size_t len) {
  **/
 void client_t::handle_read(const error_code & error, size_t len) {
 
-    if (!error) {
-        LOG4CPLUS_TRACE(log_, "Readed " << len << " bytes");
-        
-        if (len && len < async_buffer_.size()) {
-            perm_buffer_.assign(&async_buffer_[0], &async_buffer_[len]);
-        } else {
-            LOG4CPLUS_ERROR(log_, "len=" << len << ", but capacity=" << async_buffer_.size());
-            perm_buffer_.clear();
-        }
-        
-        socket_.async_read_some(buffer(async_buffer_),
-                strand_.wrap(
-                    [this](const error_code & error, size_t len) {
-                        this->handle_read(error, len);
-                    }
-                )
-            );
-        
-        if (!perm_buffer_.empty()) {
-            impl_->recive(&perm_buffer_[0], perm_buffer_.size());
+    try {
+
+        if (!error) {
+            LOG4CPLUS_TRACE(log_, "Readed " << len << " bytes");
+            
+            if (len && len < async_buffer_.size()) {
+                perm_buffer_.assign(&async_buffer_[0], &async_buffer_[len]);
+            } else {
+                LOG4CPLUS_ERROR(log_, "len=" << len << ", but capacity=" << async_buffer_.size());
+                perm_buffer_.clear();
+            }
+            
+            socket_.async_read_some(buffer(async_buffer_),
+                    strand_.wrap(
+                        [this](const error_code & error, size_t len) {
+                            this->handle_read(error, len);
+                        }
+                    )
+                );
+            
+            if (!perm_buffer_.empty()) {
+                impl_->recive(&perm_buffer_[0], perm_buffer_.size());
+            }
+
+        } else if (error != operation_aborted) {
+            LOG4CPLUS_ERROR(log_, error << ". Connection closed.");
+            stop();
         }
 
-    } else if (error != operation_aborted) {
-        LOG4CPLUS_ERROR(log_, error << ". Connection closed.");
-        stop();
+    } catch(const exception & e) {
+        LOG4CPLUS_ERROR(log_, e.what());
+
+    } catch (...) {
+        LOG4CPLUS_ERROR(log_, "Unexpected exception");
     }
 }
 
