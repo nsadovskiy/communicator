@@ -22,7 +22,7 @@ namespace communicator {
          **/
         class oracle_t : public base_impl_t {
         public:
-            oracle_t(const std::string & login, const std::string & password, const std::string & path);
+            oracle_t(const std::string & login, const std::string & password, const std::string & path, bool test_connection = true);
             virtual ~oracle_t();
 
         public:

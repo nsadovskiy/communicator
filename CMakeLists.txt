@@ -1,6 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-PROJECT(communicator)
+SET(PROJECT communicator)
+
+PROJECT(${PROJECT})
 
 MACRO(TODAY RESULT)
     IF (WIN32)
@@ -41,15 +43,19 @@ FIND_PACKAGE(MongoDB)
 FIND_PACKAGE(RabbitMQ)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Log4cplus REQUIRED)
-FIND_PACKAGE(Boost 1.49 COMPONENTS system thread filesystem program_options regex date_time chrono REQUIRED)
+FIND_PACKAGE(Boost 1.49 COMPONENTS system thread filesystem program_options regex date_time chrono unit_test_framework REQUIRED)
 
 SET(SOURCES ${SOURCES}
-    main.cpp
-    utils.cpp
-    server.cpp
-    client.cpp
-    protocol_base.cpp
-)
+        main.cpp
+        utils.cpp
+        server.cpp
+        client.cpp
+        protocol_base.cpp
+    )
+
+SET(TESTS_SOURCES ${TESTS_SOURCES}
+        test/params.cpp
+    )
 
 IF (${WIN32})
     
@@ -82,10 +88,11 @@ SET(CMAKE_CXX_FLAGS "-std=c++0x -O2 -Wall")
 
 CONFIGURE_FILE(cmake/config.h.in ${CMAKE_SOURCE_DIR}/config.h)
 
-ADD_EXECUTABLE(communicator ${SOURCES})
+SET(TEST test_${PROJECT})
 
 IF (ORACLE_FOUND)
     SET(LIBRARIES ${LIBRARIES} ${ORACLE_LIBRARIES})
+    SET(TEST_LIBRARIES ${TEST_LIBRARIES} ${ORACLE_LIBRARIES})
 ENDIF(ORACLE_FOUND)
 
 IF (MongoDB_FOUND)
@@ -103,9 +110,20 @@ SET(LIBRARIES ${LIBRARIES}
         ${LOG4CPLUS_LIBRARIES}
     )
 
-TARGET_LINK_LIBRARIES(communicator 
-    ${LIBRARIES}
-)
+ADD_EXECUTABLE(${PROJECT} ${SOURCES})
+ADD_EXECUTABLE(${TEST} ${TESTS_SOURCES})
+
+TARGET_LINK_LIBRARIES(${PROJECT} ${LIBRARIES})
+
+SET(TEST_LIBRARIES ${TEST_LIBRARIES}
+        ${Boost_LIBRARIES}
+        ${LOG4CPLUS_LIBRARIES}
+    )
+
+TARGET_LINK_LIBRARIES(${TEST} ${TEST_LIBRARIES})
+
+ENABLE_TESTING()
+ADD_TEST(${TEST} ${TEST})
 
 SET(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/bin")
 INSTALL(TARGETS communicator DESTINATION .)

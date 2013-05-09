@@ -17,7 +17,7 @@ using namespace oracle::occi;
  *
  *
  **/
-communicator::backend::oracle_t::oracle_t(const std::string & login, const std::string & password, const std::string & path) :
+communicator::backend::oracle_t::oracle_t(const std::string & login, const std::string & password, const std::string & path, bool test_connection/* = true*/) :
     base_impl_t(login, password, path),
     environment_(Environment::createEnvironment(Environment::DEFAULT), Environment::terminateEnvironment) {
 
@@ -27,7 +27,9 @@ communicator::backend::oracle_t::oracle_t(const std::string & login, const std::
     Environment::getClientVersion(major, minor, update, patch, port);
     LOG4CPLUS_INFO(get_log(), "Created Oracle backend. Using Oracle Client " << major << "." << minor << "." << update << "." << patch << "." << port);
 
-    open_connection();
+    if (test_connection) {
+        open_connection();
+    }
 }
 
 /**
