@@ -7,16 +7,23 @@ SET(SOURCES ${SOURCES}
 
 SET(TESTS_SOURCES ${TESTS_SOURCES}
         backends/base.cpp
+        backends/factory.cpp
     )
 
 IF (MongoDB_FOUND)
     SET(SOURCES ${SOURCES}
             backends/mongodb.cpp
         )
+    SET(TESTS_SOURCES ${TESTS_SOURCES}
+            backends/mongodb.cpp
+        )
 ENDIF(MongoDB_FOUND)
 
 IF (RABBITMQ_FOUND)
     SET(SOURCES ${SOURCES}
+            backends/rabbitmq.cpp
+        )
+    SET(TESTS_SOURCES ${TESTS_SOURCES}
             backends/rabbitmq.cpp
         )
 ENDIF(RABBITMQ_FOUND)
