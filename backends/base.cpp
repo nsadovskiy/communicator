@@ -104,7 +104,7 @@ void communicator::backend::base_impl_t::work_proc() {
 
         while (true) {
 
-            boost::this_thread::sleep(boost::posix_time::seconds(5));
+            boost::this_thread::sleep(boost::posix_time::seconds(1));
 
             try {
 

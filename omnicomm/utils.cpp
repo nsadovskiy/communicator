@@ -78,7 +78,7 @@ std::string omnicomm::otime_to_string(size_t omnicomm_time) {
     struct tm * t = gmtime(&unix_time);
     str <<
         setw(2) << t->tm_mday << "." << 
-        setw(2) << t->tm_mon << "."<< 
+        setw(2) << (t->tm_mon + 1) << "."<< 
         setw(4) << (1900 + t->tm_year) << " " << 
         setw(2) << t->tm_hour << ":" << 
         setw(2) << t->tm_min << ":" << 

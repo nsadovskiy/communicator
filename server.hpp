@@ -38,6 +38,7 @@ namespace communicator {
      **/
     struct settings_t {
 
+        bool daemon_mode;
         unsigned num_workers;
 
         struct {

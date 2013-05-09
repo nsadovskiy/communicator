@@ -311,7 +311,7 @@ void omnicomm::transport_protocol_t::process_info_messages(const data_response_t
         for (auto msg: messages) {
             message.str("");
             message.clear();
-            message << "controller_id=\"" << controller_id_ << "\" firmware=\"" << firmware_version_ << "\" " << msg;
+            message << "control_id=\"" << controller_id_ << "\" firmware=\"" << firmware_version_ << "\" " << msg;
             get_manipulator()->get_backend().add_message(message.str());
         }
 

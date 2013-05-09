@@ -323,7 +323,7 @@ void extract(const RecReg_NAV & message, std::map<std::string, std::string> & da
 
     str.str("");
     str.clear();
-    str << message.gpsdir();
+    str << static_cast<int>(message.gpsdir());
     data["course"] = str.str();
 
     str.str("");

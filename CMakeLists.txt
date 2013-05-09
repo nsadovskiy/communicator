@@ -51,6 +51,14 @@ SET(SOURCES ${SOURCES}
     protocol_base.cpp
 )
 
+IF (${WIN32})
+    
+ELSE()
+    SET(SOURCES ${SOURCES}
+            daemon.cpp
+        )
+ENDIF()
+
 INCLUDE(omnicomm/CMakeLists.txt)
 INCLUDE(backends/CMakeLists.txt)
 

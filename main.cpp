@@ -2,6 +2,7 @@
  *
  *
  **/
+#include <string>
 #include <iostream>
 #include <exception>
 
@@ -17,11 +18,12 @@
 #include "server.hpp"
 #include "omnicomm/protocol.hpp"
 
-#include <occi.h>
-
-using namespace oracle::occi;
-
 using std::cerr;
+using std::string;
+
+void daemonize();
+
+const log4cplus::Logger logger = log4cplus::Logger::getInstance("main");
 
 /**
  *
@@ -33,7 +35,7 @@ bool fill_settings(int argc, const char * argv[], communicator::settings_t & set
     // boost::regex re("(\\w+)://((\\w+):(\\w+)@)?(([^/:]+)(:(\\d+))?/)?(.+)?");
     boost::regex re("(\\w+)://((\\w+):(\\w+)@)?(.+)?");
 
-    if (argc < 5 || !boost::regex_match(argv[4], match, re)) {
+    if (argc < 6 || !boost::regex_match(argv[5], match, re)) {
         return false;
     }
 
@@ -41,9 +43,15 @@ bool fill_settings(int argc, const char * argv[], communicator::settings_t & set
     //     cerr << "Match: " << m << "\n";
     // }
 
-    settings.num_workers = boost::lexical_cast<size_t>(argv[3]);
-    settings.listen.ip_addr = argv[1];
-    settings.listen.port = argv[2];
+    string mode = argv[1];
+    if (mode != "daemon" && mode != "nodaemon") {
+        return false;
+    }
+
+    settings.daemon_mode = (string(argv[1]) == "daemon");
+    settings.num_workers = boost::lexical_cast<size_t>(argv[4]);
+    settings.listen.ip_addr = argv[2];
+    settings.listen.port = argv[3];
     settings.store.protocol = match[1];
     settings.store.username = match[3];
     settings.store.password = match[4];
@@ -59,7 +67,6 @@ bool fill_settings(int argc, const char * argv[], communicator::settings_t & set
 int main(int argc, const char * argv[]) {
 
     log4cplus::PropertyConfigurator::doConfigure("log4cplus.config");
-    const log4cplus::Logger logger = log4cplus::Logger::getInstance("main");
 
     try {
 
@@ -80,15 +87,20 @@ int main(int argc, const char * argv[]) {
         communicator::settings_t settings;
 
         if (!fill_settings(argc, argv, settings)) {
-            cerr << "Usage: communicator <ip-address> <port> <threads> <store>\n";
-            cerr << "  <ip-address>  - listened address to bind\n";
-            cerr << "  <port>        - listened port\n";
-            cerr << "  <threads>     - number woring threads\n";
-            cerr << "  <store>       - storage connection protocol://login:password@path\n";
+            cerr << "Usage: communicator <mode> <ip-address> <port> <threads> <store>\n";
+            cerr << "  <daemon|nodaemon>  - run mode console or daemon\n";
+            cerr << "  <ip-address>       - listened address to bind\n";
+            cerr << "  <port>             - listened port\n";
+            cerr << "  <threads>          - number woring threads\n";
+            cerr << "  <store>            - storage connection protocol://login:password@path\n";
             cerr << "\n";
             cerr << "Example:\n";
-            cerr << "  communicator 0.0.0.0 4010 4 rabbitmq://guest:guest@path/\n";
+            cerr << "  communicator nodaemon 0.0.0.0 4010 4 oracle://login:password@db-server/database_sid\n";
             exit(1);
+        }
+
+        if (settings.daemon_mode) {
+            daemonize();
         }
 
         communicator::server_t server(settings, omnicomm::transport_protocol_t::create);
