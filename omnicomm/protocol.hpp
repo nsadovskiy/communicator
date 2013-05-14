@@ -57,6 +57,7 @@ namespace omnicomm {
     private:
         log4cplus::Logger log_;
         int state_;
+        int protocol_state_;
         unsigned controller_id_;
         unsigned firmware_version_;
         array_type buffer_;

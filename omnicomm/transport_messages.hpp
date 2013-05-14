@@ -118,7 +118,7 @@ namespace omnicomm {
      * Сообщение 0x86 "данные архива"
      *
      **/
-    struct data_response_t : public transport_message_t<tm_code::s_data_request, data_response_t> {
+    struct data_response_t : public transport_message_t<tm_code::c_archive_data, data_response_t> {
         
         unsigned int last_mes_number;   // Сквозной номер последнего сообщения в архиве
         unsigned int first_mes_time;    // Время первого сообщения в архиве (omnicommtime)

@@ -30,6 +30,16 @@ namespace stuff_state {
         possible_stuff
     };
 }
+
+namespace protocol_state {
+    enum {
+        wait_initial,
+        wait_initial_delete_confirm,
+        process_archive,
+        process_current
+    };
+}
+
 /**
  *
  *
@@ -70,6 +80,7 @@ void omnicomm::transport_protocol_t::set_last_counter(unsigned controller_id, un
 omnicomm::transport_protocol_t::transport_protocol_t() :
     log_(log4cplus::Logger::getInstance("main")),
     state_(stuff_state::normal),
+    protocol_state_(protocol_state::wait_initial),
     info_protocol_(*this) {
 
 }
@@ -213,7 +224,19 @@ void omnicomm::transport_protocol_t::process_delete_confirmation(const transport
 
     const delete_confirmation_t & msg = static_cast<const delete_confirmation_t &>(hdr);
 
-    LOG4CPLUS_TRACE(log_, "delete_data_confirmation [message=" << msg.mes_number << "]");
+    LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} delete_data_confirmation [message=" << msg.mes_number << "]");
+
+    if (protocol_state::wait_initial_delete_confirm == protocol_state_) {
+        
+        LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} Initial data delete complete. Start reading archive.");
+        
+        set_last_counter(controller_id_, msg.mes_number);
+        
+        data_request_t request(msg.mes_number);
+        send(reinterpret_cast<const unsigned char *>(&request), sizeof(data_request_t));
+        
+        protocol_state_ = protocol_state::process_archive;
+    }
 }
 
 /**
@@ -233,10 +256,27 @@ void omnicomm::transport_protocol_t::process_controller_ident(const transport_he
     if (last_counter > 0) {
         ++last_counter;
     }
-    LOG4CPLUS_INFO(log_, "controller_ident[controller_id=" << msg.controller_id << ", firmware version=" << msg.firmware_version << ", last recieved id=" << last_counter << "]");
+    LOG4CPLUS_INFO(log_, "{" << controller_id_ << "} controller_ident[controller_id=" << msg.controller_id << ", firmware version=" << msg.firmware_version << ", last recieved id=" << last_counter << "]");
 
-    data_request_t request(last_counter);
-    send(reinterpret_cast<const unsigned char *>(&request), sizeof(data_request_t));
+    if (0 == last_counter) {
+
+        LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} First controller appearance. Request from 0.");
+
+        data_request_t request(0);
+        send(reinterpret_cast<const unsigned char *>(&request), sizeof(data_request_t));
+
+        protocol_state_ = protocol_state::process_archive;
+
+    } else {
+
+        LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} Last accepted message: " << last_counter);
+
+        LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} Send delete_data[id=" << last_counter << "]");
+        delete_data_t request(last_counter);
+        send(reinterpret_cast<const unsigned char *>(&request), sizeof(delete_data_t));
+
+        protocol_state_ = protocol_state::wait_initial_delete_confirm;
+    }
 }
 
 /**
@@ -248,17 +288,23 @@ void omnicomm::transport_protocol_t::process_archive_data(const transport_header
     const data_response_t & msg = static_cast<const data_response_t &>(hdr);
 
     if (0 == msg.data_len) {
+
         unsigned last_counter = get_last_counter(controller_id_);
-        LOG4CPLUS_TRACE(log_, "archive download completed successful. Deleting archive data till message " << last_counter);
+
+        LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} archive download completed successful. Deleting archive data till message " << last_counter);
+
+        protocol_state_ = protocol_state::process_current;
+
+        LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} Send delete_data[id=" << last_counter << "]");
         delete_data_t request(last_counter);
-        send(reinterpret_cast<const unsigned char *>(&request), sizeof(data_request_t));
+        send(reinterpret_cast<const unsigned char *>(&request), sizeof(delete_data_t));
 
     } else {
 
         msg.check_length();
 
-        LOG4CPLUS_TRACE(log_, "archive_data_response[last_mes_number=" << msg.last_mes_number << ", first_mes_time=" << omnicomm::otime_to_string(msg.first_mes_time) << " priority=" << static_cast<int>(msg.priority) << "]");
-        LOG4CPLUS_TRACE(log_, "archive_data_response[data=[" << to_hex_string(msg.im_data, msg.get_im_length()) << "]]");
+        LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} archive_data_response[last_mes_number=" << msg.last_mes_number << ", first_mes_time=" << omnicomm::otime_to_string(msg.first_mes_time) << " priority=" << static_cast<int>(msg.priority) << "]");
+        LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} archive_data_response[data=[" << to_hex_string(msg.im_data, msg.get_im_length()) << "]]");
 
         process_info_messages(msg);
         set_last_counter(controller_id_, msg.last_mes_number);
@@ -275,13 +321,13 @@ void omnicomm::transport_protocol_t::process_current_data(const transport_header
 
     msg.check_length();
 
-    LOG4CPLUS_TRACE(log_, "current_data_response[last_mes_number=" << msg.last_mes_number << ", first_mes_time=" << msg.first_mes_time << " priority=" << static_cast<int>(msg.priority) << "]");
-    LOG4CPLUS_TRACE(log_, "current_data_response[data=[" << to_hex_string(msg.im_data, msg.get_im_length()) << "]]");
+    LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} current_data_response[last_mes_number=" << msg.last_mes_number << ", first_mes_time=" << msg.first_mes_time << " priority=" << static_cast<int>(msg.priority) << "]");
+    LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} current_data_response[data=[" << to_hex_string(msg.im_data, msg.get_im_length()) << "]]");
 
     process_info_messages(msg);
     set_last_counter(controller_id_, msg.last_mes_number);
 
-    LOG4CPLUS_TRACE(log_, "Send delete_data[id=" << msg.last_mes_number << "]");
+    LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} Send delete_data[id=" << msg.last_mes_number << "]");
     delete_data_t request(msg.last_mes_number);
     send(reinterpret_cast<const unsigned char *>(&request), sizeof(delete_data_t));
 }
@@ -329,7 +375,7 @@ void omnicomm::transport_protocol_t::process_info_messages(const data_response_t
  **/
 void omnicomm::transport_protocol_t::send(const unsigned char * data, size_t len) {
 
-    if (0 == len) {
+    if (1 > len) {
         return;
     }
 
@@ -350,7 +396,7 @@ void omnicomm::transport_protocol_t::send(const unsigned char * data, size_t len
     buffer.push_back(static_cast<unsigned char>(crc & 0xFF));
     buffer.push_back(static_cast<unsigned char>(crc >> 8));
     
-    LOG4CPLUS_TRACE(log_, "   sending: [" << to_hex_string(&buffer[0], buffer.size()).c_str() << "]");
+    LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "}    sending: [" << to_hex_string(&buffer[0], buffer.size()).c_str() << "]");
     
     get_manipulator()->send(&buffer[0], buffer.size());
 }
@@ -383,7 +429,7 @@ void omnicomm::transport_protocol_t::store_data(const unsigned char * data, size
                     buffer_.push_back(0xdb);
                 } else {
                     // Если символы 0x0c и 0xdb экранированы, по-идее, мы сюда попасть не должны...
-                    LOG4CPLUS_WARN(log_, "Unexpected character in data stream");
+                    LOG4CPLUS_WARN(log_, "{" << controller_id_ << "} Unexpected character in data stream");
                     buffer_.push_back(0xdb);
                     buffer_.push_back(data[i]);
                 }
