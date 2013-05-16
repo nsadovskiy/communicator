@@ -43,7 +43,7 @@ FIND_PACKAGE(MongoDB)
 FIND_PACKAGE(RabbitMQ)
 FIND_PACKAGE(Protobuf REQUIRED)
 FIND_PACKAGE(Log4cplus REQUIRED)
-FIND_PACKAGE(Boost 1.48 COMPONENTS system thread filesystem program_options regex date_time chrono unit_test_framework REQUIRED)
+FIND_PACKAGE(Boost 1.48 COMPONENTS system thread filesystem program_options regex date_time chrono unit_test_framework serialization REQUIRED)
 
 SET(SOURCES ${SOURCES}
         main.cpp

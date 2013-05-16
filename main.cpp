@@ -99,6 +99,8 @@ int main(int argc, const char * argv[]) {
             exit(1);
         }
 
+        omnicomm::transport_protocol_t::init_protocol();
+
         if (settings.daemon_mode) {
             daemonize();
         }

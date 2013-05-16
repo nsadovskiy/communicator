@@ -38,8 +38,17 @@ communicator::server_t::server_t(const settings_t & settings, create_func_type c
 
     LOG4CPLUS_TRACE(log_, "Starting starage backend");
     store_backend_->start();
+
     bind_signals();
+
     start_listen(settings.listen.ip_addr, settings.listen.port);
+
+    LOG4CPLUS_TRACE(log_, "Starting timer");
+    timer_.async_wait(
+            [this](const error_code & error) {
+                this->handle_timer(error);
+            }
+        );
 }
 
 /**
@@ -137,6 +146,8 @@ void communicator::server_t::handle_stop() {
  **/
 void communicator::server_t::handle_timer(const error_code & error) {
 
+    LOG4CPLUS_TRACE(log_, "Server timer event");
+
     if (!error) {
         timer_.expires_at(timer_.expires_at() + seconds(interval_));
         timer_.async_wait(
@@ -187,7 +198,7 @@ void communicator::server_t::drop_unused_clients() {
             }
         );
     if (pos != clients_.end()) {
-        LOG4CPLUS_INFO(log_, "Where are " << distance(pos, clients_.end()) << " disconnected client(s). Kill them all!!!");
+        LOG4CPLUS_TRACE(log_, "Where are " << distance(pos, clients_.end()) << " disconnected client(s). Kill them all!!!");
         clients_.erase(pos, clients_.end());
     }
 }

@@ -4,11 +4,19 @@
  **/
 #include "protocol.hpp"
 
+#include <fstream>
 #include <sstream>
 #include <cassert>
 #include <iomanip>
 #include <algorithm>
+
 #include <log4cplus/loggingmacros.h>
+
+#include <boost/serialization/map.hpp>
+// #include <boost/archive/binary_oarchive.hpp>
+// #include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
 
 #include "utils.hpp"
 #include "../utils.hpp"
@@ -17,6 +25,8 @@
 #include "transport_messages.hpp"
 
 using std::find;
+using std::ifstream;
+using std::ofstream;
 using std::distance;
 using std::exception;
 
@@ -36,7 +46,8 @@ namespace protocol_state {
         wait_initial,
         wait_initial_delete_confirm,
         process_archive,
-        process_current
+        process_current,
+        wait_final_delete_confirm
     };
 }
 
@@ -47,6 +58,69 @@ namespace protocol_state {
 omnicomm::transport_protocol_t::counterer_type omnicomm::transport_protocol_t::counterer_;
 boost::mutex omnicomm::transport_protocol_t::mutex_;
 
+const log4cplus::Logger logger = log4cplus::Logger::getInstance("main");
+const char counters_filename[] = "counters.dat";
+
+/**
+ *
+ *
+ **/
+void omnicomm::transport_protocol_t::load_counters() {
+
+    LOG4CPLUS_TRACE(logger, "Saving counters");
+    
+    try {
+
+        lock_guard_type lock(mutex_);
+
+        ifstream file(counters_filename, std::ios::binary);
+        if (!file.fail()) {
+            boost::archive::text_iarchive archive(file);
+            archive >> counterer_;
+        }
+
+    } catch (const exception & e) {
+        LOG4CPLUS_ERROR(logger, "Exception while saving counters. " << e.what());
+
+    } catch (...) {
+        LOG4CPLUS_ERROR(logger, "Unexpected exception while saving counters.");
+    }
+}
+
+/**
+ *
+ *
+ **/
+void omnicomm::transport_protocol_t::save_counters() {
+
+    LOG4CPLUS_TRACE(logger, "Saving counters");
+    
+    try {
+
+        lock_guard_type lock(mutex_);
+
+        ofstream file(counters_filename, std::ios::binary);
+        if (!file.fail()) {
+            boost::archive::text_oarchive archive(file);
+            archive << counterer_;
+        }
+
+    } catch (const exception & e) {
+        LOG4CPLUS_ERROR(logger, "Exception while saving counters. " << e.what());
+
+    } catch (...) {
+        LOG4CPLUS_ERROR(logger, "Unexpected exception while saving counters.");
+    }
+}
+
+/**
+ *
+ *
+ **/
+void omnicomm::transport_protocol_t::init_protocol() {
+    load_counters();
+}
+
 /**
  *
  *
@@ -55,11 +129,15 @@ unsigned omnicomm::transport_protocol_t::get_last_counter(unsigned controller_id
 
     unsigned result = 0;
 
-    lock_guard_type lock(mutex_);
+    {
+        lock_guard_type lock(mutex_);
 
-    if (counterer_.count(controller_id) > 0) {
-        result = counterer_[controller_id];
+        if (counterer_.count(controller_id) > 0) {
+            result = counterer_[controller_id];
+        }
     }
+
+    LOG4CPLUS_TRACE(logger, "Request latest counter for controller " << controller_id << ". Counter: " << result);
 
     return result;
 }
@@ -69,8 +147,13 @@ unsigned omnicomm::transport_protocol_t::get_last_counter(unsigned controller_id
  *
  **/
 void omnicomm::transport_protocol_t::set_last_counter(unsigned controller_id, unsigned counter) {
-    lock_guard_type lock(mutex_);
-    counterer_[controller_id] = counter;
+
+    {
+        lock_guard_type lock(mutex_);
+        counterer_[controller_id] = counter;
+    }
+
+    save_counters();
 }
 
 /**
@@ -230,12 +313,16 @@ void omnicomm::transport_protocol_t::process_delete_confirmation(const transport
         
         LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} Initial data delete complete. Start reading archive.");
         
-        set_last_counter(controller_id_, msg.mes_number);
+        // set_last_counter(controller_id_, msg.mes_number);
         
         data_request_t request(msg.mes_number);
         send(reinterpret_cast<const unsigned char *>(&request), sizeof(data_request_t));
         
         protocol_state_ = protocol_state::process_archive;
+
+    } else if (protocol_state::wait_final_delete_confirm == protocol_state_) {
+        LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} Archive data download complete. Disconnecting.");
+        get_manipulator()->stop();
     }
 }
 
@@ -293,11 +380,13 @@ void omnicomm::transport_protocol_t::process_archive_data(const transport_header
 
         LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} archive download completed successful. Deleting archive data till message " << last_counter);
 
-        protocol_state_ = protocol_state::process_current;
+        // protocol_state_ = protocol_state::process_current;
 
         LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} Send delete_data[id=" << last_counter << "]");
         delete_data_t request(last_counter);
         send(reinterpret_cast<const unsigned char *>(&request), sizeof(delete_data_t));
+
+        protocol_state_ = protocol_state::wait_final_delete_confirm;
 
     } else {
 
@@ -330,6 +419,8 @@ void omnicomm::transport_protocol_t::process_current_data(const transport_header
     LOG4CPLUS_TRACE(log_, "{" << controller_id_ << "} Send delete_data[id=" << msg.last_mes_number << "]");
     delete_data_t request(msg.last_mes_number);
     send(reinterpret_cast<const unsigned char *>(&request), sizeof(delete_data_t));
+
+    protocol_state_ = protocol_state::wait_final_delete_confirm;
 }
 
 /**

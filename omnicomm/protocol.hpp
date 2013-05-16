@@ -50,7 +50,12 @@ namespace omnicomm {
         virtual void connect_impl();
         virtual void recive_impl(const unsigned char * data, size_t len);
 
+    public:
+        static void init_protocol();
+
     private:
+        static void load_counters();
+        static void save_counters();
         static unsigned get_last_counter(unsigned controller_id);
         static void set_last_counter(unsigned controller_id, unsigned counter);
 
