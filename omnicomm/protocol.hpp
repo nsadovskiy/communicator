@@ -43,7 +43,11 @@ namespace omnicomm {
         void process_info_messages(const data_response_t & hdr);
         void process_delete_confirmation(const transport_header_t & hdr);
 
+        void send_delete();
+        void send_request();
+
         void send(const unsigned char * data, size_t len);
+        void stuff_byte_to_buffer(unsigned char byte, array_type & buffer);
 
     private:
         virtual void init_impl();

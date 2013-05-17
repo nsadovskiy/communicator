@@ -85,6 +85,7 @@ IF (RABBITMQ_FOUND)
 ENDIF(RABBITMQ_FOUND)
 
 SET(CMAKE_CXX_FLAGS "-std=c++0x -O2 -Wall")
+# SET(CMAKE_CXX_FLAGS "-std=c++0x -g3 -fno-inline -O0 -fbounds-check")
 
 CONFIGURE_FILE(cmake/config.h.in ${CMAKE_SOURCE_DIR}/config.h)
 
