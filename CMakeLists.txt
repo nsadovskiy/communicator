@@ -46,7 +46,7 @@ FIND_PACKAGE(Log4cplus REQUIRED)
 FIND_PACKAGE(Boost 1.48 COMPONENTS system thread filesystem program_options regex date_time chrono unit_test_framework serialization REQUIRED)
 
 SET(SOURCES ${SOURCES}
-        main.cpp
+#        main.cpp
         utils.cpp
         server.cpp
         client.cpp
@@ -58,9 +58,12 @@ SET(TESTS_SOURCES ${TESTS_SOURCES}
     )
 
 IF (${WIN32})
-    
+    SET(SOURCES ${SOURCES}
+            main_win.cpp
+        )
 ELSE()
     SET(SOURCES ${SOURCES}
+            main_linux.cpp
             daemon.cpp
         )
 ENDIF()
@@ -84,8 +87,12 @@ IF (RABBITMQ_FOUND)
     INCLUDE_DIRECTORIES(${RABBITMQ_INCLUDE_DIRS})
 ENDIF(RABBITMQ_FOUND)
 
-SET(CMAKE_CXX_FLAGS "-std=c++0x -O2 -Wall")
-# SET(CMAKE_CXX_FLAGS "-std=c++0x -g3 -fno-inline -O0 -fbounds-check")
+IF (CMAKE_COMPILER_IS_GNUCC)
+	SET(CMAKE_CXX_FLAGS "-std=c++0x -O2 -Wall")
+	# SET(CMAKE_CXX_FLAGS "-std=c++0x -g3 -fno-inline -O0 -fbounds-check")
+ELSEIF(MSVC)
+	SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /EHsc")
+ENDIF(CMAKE_COMPILER_IS_GNUCC)
 
 CONFIGURE_FILE(cmake/config.h.in ${CMAKE_SOURCE_DIR}/config.h)
 
