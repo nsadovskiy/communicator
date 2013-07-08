@@ -3,8 +3,12 @@
  *
  **/
 #include <string>
+#include <sstream>
 #include <iostream>
 #include <exception>
+#include <stdexcept>
+
+#include <libconfig.h++>
 
 #include <boost/asio.hpp>
 #include <boost/regex.hpp>
@@ -29,7 +33,71 @@ const log4cplus::Logger logger = log4cplus::Logger::getInstance("main");
  *
  *
  **/
+bool read_settings_from_file(const char * config_path, communicator::settings_t & settings) {
+
+    using std::exception;
+    using std::runtime_error;
+    using std::ostringstream;
+    using namespace libconfig;
+
+    Config config;
+
+    try {
+        config.readFile(config_path);
+    }
+    catch (const FileIOException & e) {
+        ostringstream err;
+        err << "Error opening cofiguration file '" << config_path << "'";
+        throw runtime_error(err.str());
+    }
+    catch(const ParseException & e) {
+        ostringstream err;
+        err << "Parse error at " << e.getFile() << ":" << e.getLine() << " - " << e.getError();
+        throw runtime_error(err.str());
+    }
+    catch (const runtime_error & e) {
+        throw;
+    }
+    catch (const exception & e) {
+        throw runtime_error(e.what());
+    }
+    catch (...) {
+        throw runtime_error("Unexpected exception while reading configuration file");
+    }
+    
+
+    return true;
+}
+
+/**
+ *
+ *
+ **/
 bool fill_settings(int argc, const char * argv[], communicator::settings_t & settings) {
+
+    if (argc < 2) {
+        settings.daemon_mode = false;
+        return read_settings_from_file("communicator.conf", settings);
+    }
+
+
+    string mode = argv[1];
+    if (mode != "daemon" && mode != "nodaemon") {
+        return false;
+    }
+
+    settings.daemon_mode = (mode == "daemon");
+
+
+    if (argc == 2) {
+        return read_settings_from_file("communicator.conf", settings);
+    }
+
+
+    if (argc == 3) {
+        return read_settings_from_file(argv[2], settings);
+    }
+
 
     boost::cmatch match;
     // boost::regex re("(\\w+)://((\\w+):(\\w+)@)?(([^/:]+)(:(\\d+))?/)?(.+)?");
@@ -43,12 +111,6 @@ bool fill_settings(int argc, const char * argv[], communicator::settings_t & set
     //     cerr << "Match: " << m << "\n";
     // }
 
-    string mode = argv[1];
-    if (mode != "daemon" && mode != "nodaemon") {
-        return false;
-    }
-
-    settings.daemon_mode = (string(argv[1]) == "daemon");
     settings.num_workers = boost::lexical_cast<size_t>(argv[4]);
     settings.listen.ip_addr = argv[2];
     settings.listen.port = argv[3];
@@ -66,7 +128,7 @@ bool fill_settings(int argc, const char * argv[], communicator::settings_t & set
  **/
 int main(int argc, const char * argv[]) {
 
-    log4cplus::PropertyConfigurator::doConfigure("log4cplus.config");
+    log4cplus::PropertyConfigurator::doConfigure("log4cplus.conf");
 
     try {
 

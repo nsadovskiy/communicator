@@ -2,6 +2,8 @@
  *
  *
  **/
+#include <sstream>
+#include <stdexcept>
 #include "utils.hpp"
 #include "client.hpp"
 #include "protocol_base.hpp"
@@ -50,9 +52,14 @@ client_t::~client_t() {
 void client_t::start() {
 
     try {
+
+        std::ostringstream os;
+        os << socket_.remote_endpoint();
+        endpoint_name_ = os.str();
     
         impl_->init(this);
-        LOG4CPLUS_INFO(log_, "New connection from " << socket_.remote_endpoint());
+        LOG4CPLUS_INFO(log_, "[net]{" << endpoint_name_ << "} New connection established");
+        LOG4CPLUS_TRACE(log_, "[net]{" << endpoint_name_ << "} Start async read");
         socket_.async_read_some(buffer(async_buffer_),
                 strand_.wrap(
                     [this](const error_code & error, size_t len) {
@@ -62,10 +69,12 @@ void client_t::start() {
             );
 
     } catch(const exception & e) {
-        LOG4CPLUS_ERROR(log_, e.what());
+        LOG4CPLUS_ERROR(log_, "[net]{" << endpoint_name_ << "} " << e.what());
+        stop();
 
     } catch (...) {
-        LOG4CPLUS_ERROR(log_, "Unexpected exception");
+        LOG4CPLUS_ERROR(log_, "[net]{" << endpoint_name_ << "} Unexpected exception");
+        stop();
     }
 }
 
@@ -77,14 +86,14 @@ void client_t::stop() {
     
     try {
     
-        LOG4CPLUS_INFO(log_, "Client " << socket_.remote_endpoint() << " disconnected");
+        LOG4CPLUS_INFO(log_, "[net]{" << endpoint_name_ << "} Client disconnected");
         socket_.close();
     
     } catch(const exception & e) {
-        LOG4CPLUS_ERROR(log_, e.what());
+        LOG4CPLUS_ERROR(log_, "[net]{" << endpoint_name_ << "} " << e.what());
 
     } catch (...) {
-        LOG4CPLUS_ERROR(log_, "Unexpected exception");
+        LOG4CPLUS_ERROR(log_, "[net]{" << endpoint_name_ << "} Unexpected exception");
     }
 }
 
@@ -94,24 +103,23 @@ void client_t::stop() {
  **/
 void client_t::send(const unsigned char * data, size_t len) {
 
-    // auto b = boost::asio::buffer(data, len);
+    LOG4CPLUS_TRACE(log_, "[net]{" << endpoint_name_ << "} send [" << to_hex_string(data, len).c_str() << "]");
 
-    // LOG4CPLUS_INFO(log_, "   client_t::send: [" << to_hex_string(data, len).c_str() << "]");
-    // LOG4CPLUS_INFO(log_, "   client_t::send: len=" << len);
-    // LOG4CPLUS_INFO(log_, "   client_t::send: [" << data[0] << "]");
     try {
+        LOG4CPLUS_TRACE(log_, "[net]{" << endpoint_name_ << "} Start async write");
         socket_.async_send(buffer(data, len),
                 [this](const error_code & error, size_t len) {
                     this->handle_write(error, len);
                 }
             );
-        LOG4CPLUS_TRACE(log_, "Sync write started");
 
     } catch(const exception & e) {
-        LOG4CPLUS_ERROR(log_, e.what());
+        LOG4CPLUS_ERROR(log_, "[net]{" << endpoint_name_ << "} " << e.what());
+        stop();
 
     } catch (...) {
-        LOG4CPLUS_ERROR(log_, "Unexpected exception");
+        LOG4CPLUS_ERROR(log_, "[net]{" << endpoint_name_ << "} Unexpected exception");
+        stop();
     }
 }
 
@@ -124,15 +132,18 @@ void client_t::handle_read(const error_code & error, size_t len) {
     try {
 
         if (!error) {
-            LOG4CPLUS_TRACE(log_, "Readed " << len << " bytes");
-            
+
             if (len && len < async_buffer_.size()) {
                 perm_buffer_.assign(&async_buffer_[0], &async_buffer_[len]);
             } else {
-                LOG4CPLUS_ERROR(log_, "len=" << len << ", but capacity=" << async_buffer_.size());
-                perm_buffer_.clear();
+                throw std::length_error("Input buffer length less than data size");
+                // LOG4CPLUS_ERROR(log_, "[" << endpoint_name_ << "] len=" << len << ", but capacity=" << async_buffer_.size());
+                // perm_buffer_.clear();
             }
-            
+
+            LOG4CPLUS_TRACE(log_, "[net]{" << endpoint_name_ << "} Readed " << len << " bytes [" << to_hex_string(&perm_buffer_[0], perm_buffer_.size()).c_str() << "]");
+
+            LOG4CPLUS_TRACE(log_, "[net]{" << endpoint_name_ << "} Start async read");
             socket_.async_read_some(buffer(async_buffer_),
                     strand_.wrap(
                         [this](const error_code & error, size_t len) {
@@ -146,15 +157,17 @@ void client_t::handle_read(const error_code & error, size_t len) {
             }
 
         } else if (error != operation_aborted) {
-            LOG4CPLUS_ERROR(log_, error << ". Connection closed.");
+            LOG4CPLUS_ERROR(log_, "[net]{" << endpoint_name_ << "} " << error << ". Connection closed.");
             stop();
         }
 
     } catch(const exception & e) {
-        LOG4CPLUS_ERROR(log_, e.what());
+        LOG4CPLUS_ERROR(log_, "[net]{" << endpoint_name_ << "} " << e.what());
+        stop();
 
     } catch (...) {
-        LOG4CPLUS_ERROR(log_, "Unexpected exception");
+        LOG4CPLUS_ERROR(log_, "[net]{" << endpoint_name_ << "} Unexpected exception");
+        stop();
     }
 }
 
@@ -162,6 +175,18 @@ void client_t::handle_read(const error_code & error, size_t len) {
  *
  *
  **/
-void client_t::handle_write(const boost::system::error_code & ec, size_t bytes_transferred) {
-    LOG4CPLUS_TRACE(log_, "Async write finished");
+void client_t::handle_write(const error_code & error, size_t bytes_transferred) {
+
+    if (!error) {
+        LOG4CPLUS_TRACE(log_, "[net]{" << endpoint_name_ << "} Async write complete successful");
+
+    } else {
+
+        if (error != operation_aborted) {
+            LOG4CPLUS_ERROR(log_, "[net]{" << endpoint_name_ << "} " << error << ". Connection closed.");
+            stop();
+        } else {
+            LOG4CPLUS_TRACE(log_, "[net]{" << endpoint_name_ << "} " << error << ". Async operation terminated.");
+        }
+    }
 }

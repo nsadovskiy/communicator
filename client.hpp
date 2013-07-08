@@ -54,6 +54,7 @@ private:
     void handle_write(const boost::system::error_code & ec, size_t bytes_transferred);
 
 private:
+    std::string endpoint_name_;
     log4cplus::Logger log_;
     impl_type impl_;
     communicator::backend::base_impl_t & store_backend_;
