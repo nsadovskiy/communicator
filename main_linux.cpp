@@ -82,8 +82,8 @@ int main(int argc, const char * argv[]) {
             daemonize();
         }
 
-        // communicator::server_t server(settings, omnicomm::transport_protocol_t::create);
-        // server.run();
+        communicator::server_t server(options[0], omnicomm::transport_protocol_t::create);
+        server.run();
 
     } catch (const std::exception & e) {
         LOG4CPLUS_FATAL(logger, e.what());
