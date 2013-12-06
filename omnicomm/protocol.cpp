@@ -419,14 +419,23 @@ void omnicomm::transport_protocol_t::process_info_messages(const data_response_t
 
     omnicomm::parse_info_package(msg, messages);
 
+    int len = messages.size();
     std::ostringstream message;
+    int mes_number = msg.last_mes_number - len;
 
-    for (auto msg: messages) {
+    for (int i = 0; i < len; ++i) {
         message.str("");
         message.clear();
-        message << "control_id=\"" << controller_id_ << "\" firmware=\"" << firmware_version_ << "\" " << msg;
+        message << "control_id=\"" << controller_id_ << "\" firmware=\"" << firmware_version_ << "\" mes_number=\"" << mes_number + i << "\" " << messages[i];
         get_manipulator()->get_backend().add_message(message.str());
     }
+
+    // for (auto msg: messages) {
+    //     message.str("");
+    //     message.clear();
+    //     message << "control_id=\"" << controller_id_ << "\" firmware=\"" << firmware_version_ << "\" " << msg;
+    //     get_manipulator()->get_backend().add_message(message.str());
+    // }
 }
 
 /**
