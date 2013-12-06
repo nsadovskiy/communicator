@@ -38,12 +38,11 @@ namespace communicator {
      **/
     struct settings_t {
 
-        bool daemon_mode;
-        unsigned num_workers;
+        unsigned num_workers = 1;
 
-        struct {
-            std::string ip_addr;
-            std::string port;
+        struct cp {
+            std::string ip_addr = "0.0.0.0";
+            std::string port = "4010";
         } listen;
 
         struct {
@@ -52,7 +51,6 @@ namespace communicator {
             std::string password;
             std::string path;
         } store;
-
     };
 
     /**

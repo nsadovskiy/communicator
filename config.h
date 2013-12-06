@@ -8,9 +8,9 @@
 #define MAJOR_VERSION 0
 #define MINOR_VERSION 1
 #define PATCH_VERSION 0
-#define BUILD_DATE "08.07.2013 08:16:02"
+#define BUILD_DATE "05.12.2013 15:54:19"
 
-#define MongoDB_FOUND
+/* #undef MongoDB_FOUND */
 #define RABBITMQ_FOUND
 #define ORACLE_FOUND
 
