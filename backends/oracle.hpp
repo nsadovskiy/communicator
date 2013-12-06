@@ -26,21 +26,11 @@ namespace communicator {
             virtual ~oracle_t();
 
         public:
-
-            // const std::string & get_server() const {
-            //     return server_;
-            // }
-
-            // const std::string & get_port() const {
-            //     return port_;
-            // }
-
             const std::string & get_servicename() const {
                 return get_db_name();
             }
 
         private:
-            void parse_path();
             void open_connection();
 
         private:

@@ -44,11 +44,6 @@ namespace {
         return base_impl_pointer_type(new T(options));
     };
 
-    // template<>
-    // base_impl_pointer_type creator<int>(const storage_options_t & options) {
-    //     return base_impl_pointer_type();
-    // }
-
     typedef base_impl_pointer_type (*creator_func_type)(const storage_options_t &);
 };
 
@@ -65,7 +60,6 @@ namespace communicator {
              *
              **/
             base_impl_pointer_type create(const storage_options_t & options) {
-            // base_impl_pointer_type create(const std::string & protocol, const std::string & login, const std::string & password, const std::string & path) {
 
                 map<const string, creator_func_type> backends;
 #               ifdef MongoDB_FOUND

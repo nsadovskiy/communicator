@@ -21,7 +21,9 @@ communicator::backend::oracle_t::oracle_t(const storage_options_t & options, boo
     base_impl_t(options),
     environment_(Environment::createEnvironment(Environment::DEFAULT), Environment::terminateEnvironment) {
 
-    parse_path();
+    std::ostringstream strm;
+    strm << "(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=" << get_ip_addr() << ")(PORT=" << get_tcp_port() << "))(CONNECT_DATA=(SID=" << get_db_name() << ")))";
+    connection_string_ = strm.str();
 
     int major, minor, update, patch, port;
     Environment::getClientVersion(major, minor, update, patch, port);
@@ -38,33 +40,6 @@ communicator::backend::oracle_t::oracle_t(const storage_options_t & options, boo
  **/
 communicator::backend::oracle_t::~oracle_t() {
     LOG4CPLUS_INFO(get_log(), "Oracle backend terminated");
-}
-
-/**
- *
- *
- **/
-void communicator::backend::oracle_t::parse_path() {
-
-    // boost::cmatch match;
-    // boost::regex re("([^/:]+)(:(\\d+))?/(\\w+)");
-
-    // if (!boost::regex_match(get_path().c_str(), match, re)) {
-    //     throw std::invalid_argument("URI string must match '[LOGIN:PASSWORD@]SERVER[:PORT]/SERVICE_NAME' format");
-    // }
-
-    // server_ = match[1];
-
-    // port_ = match[3];
-    // if (port_.empty()) {
-    //     port_ = "1521";
-    // }
-
-    // service_name_ = match[4];
-
-    std::ostringstream strm;
-    strm << "(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=" << get_ip_addr() << ")(PORT=" << get_tcp_port() << "))(CONNECT_DATA=(SID=" << get_db_name() << ")))";
-    connection_string_ = strm.str();
 }
 
 /**

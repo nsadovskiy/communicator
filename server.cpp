@@ -35,7 +35,6 @@ communicator::server_t::server_t(const options_t & options, create_func_type cre
     signals_(io_service_),
     acceptor_(io_service_),
     timer_(io_service_, seconds(interval_)),
-    // store_backend_(backend::factory::create(options.storage.kind, options.storage.login, options.storage.password, options.storage.db_name)) {
     store_backend_(backend::factory::create(options.storage)) {
 
     LOG4CPLUS_TRACE(log_, "Initializing server");

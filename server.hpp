@@ -38,27 +38,6 @@ namespace communicator {
      *
      *
      **/
-    struct settings_t {
-
-        unsigned num_workers = 1;
-
-        struct cp {
-            std::string ip_addr = "0.0.0.0";
-            std::string port = "4010";
-        } listen;
-
-        struct {
-            std::string protocol;
-            std::string username;
-            std::string password;
-            std::string path;
-        } store;
-    };
-
-    /**
-     *
-     *
-     **/
     class server_t {
 
     public:
