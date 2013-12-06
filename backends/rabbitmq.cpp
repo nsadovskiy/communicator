@@ -11,8 +11,8 @@
  *
  *
  **/
-communicator::backend::rabbitmq_t::rabbitmq_t(const std::string & login, const std::string & password, const std::string & path) :
-    base_impl_t(login, password, path) {
+communicator::backend::rabbitmq_t::rabbitmq_t(const storage_options_t & options) :
+    base_impl_t(options) {
 
     LOG4CPLUS_TRACE(get_log(), "RabbitMQ backend created");
 }

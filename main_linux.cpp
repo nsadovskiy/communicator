@@ -63,10 +63,10 @@ int main(int argc, const char * argv[]) {
         }
 
         for (auto option: options) {
-            LOG4CPLUS_TRACE(logger, "Settings:");
+            LOG4CPLUS_TRACE(logger, "Communicator settings:");
             LOG4CPLUS_TRACE(logger, "\t[" << option.name << "] Protocol: " << option.protocol);
             LOG4CPLUS_TRACE(logger, "\t[" << option.name << "] Worker processes: " << option.workers);
-            LOG4CPLUS_TRACE(logger, "\t[" << option.name << "] Listen: " << option.listen.id_addr << ":" << option.listen.tcp_port);
+            LOG4CPLUS_TRACE(logger, "\t[" << option.name << "] Listen: " << option.listen.ip_addr << ":" << option.listen.tcp_port);
             LOG4CPLUS_TRACE(logger, "\t[" << option.name << "] Storage type: " << option.storage.kind);
             LOG4CPLUS_TRACE(logger, "\t[" << option.name << "] Storage address: " << option.storage.connection.ip_addr << ":" << option.storage.connection.tcp_port);
             LOG4CPLUS_TRACE(logger, "\t[" << option.name << "] Storage name: " << option.storage.db_name);

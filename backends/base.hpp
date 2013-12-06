@@ -16,6 +16,9 @@
  *
  **/
 namespace communicator {
+
+    struct storage_options_t;
+
     namespace backend {
 
         /**
@@ -28,7 +31,7 @@ namespace communicator {
             typedef boost::lock_guard<boost::mutex> lock_guard_type;
 
         public:
-            base_impl_t(const std::string & login, const std::string & password, const std::string & path);
+            base_impl_t(const storage_options_t & options);
             virtual ~base_impl_t();
 
         public:
@@ -66,6 +69,14 @@ namespace communicator {
                 sleep_interval_ = interval;
             }
 
+            const std::string & get_ip_addr() const {
+                return ip_addr_;
+            }
+
+            unsigned get_tcp_port() const {
+                return tcp_port_;
+            }
+
             const std::string & get_login() const {
                 return login_;
             }
@@ -74,8 +85,8 @@ namespace communicator {
                 return password_;
             }
 
-            const std::string & get_path() const {
-                return path_;
+            const std::string & get_db_name() const {
+                return db_name_;
             }
 
         private:
@@ -88,9 +99,11 @@ namespace communicator {
 
         private:
             size_t max_messages_;
+            std::string ip_addr_;
+            unsigned tcp_port_;
             std::string login_;
             std::string password_;
-            std::string path_;
+            std::string db_name_;
             size_t sleep_interval_;
             log4cplus::Logger log_;
             boost::mutex mutex_;

@@ -3,6 +3,7 @@
  *
  **/
 #include "base.hpp"
+#include "../settings.hpp"
 #include <log4cplus/loggingmacros.h>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -10,11 +11,13 @@
  *
  *
  **/
-communicator::backend::base_impl_t::base_impl_t(const std::string & login, const std::string & password, const std::string & path) :
+communicator::backend::base_impl_t::base_impl_t(const storage_options_t & options) :
     max_messages_(4096),
-    login_(login),
-    password_(password),
-    path_(path),
+    ip_addr_(options.connection.ip_addr),
+    tcp_port_(options.connection.tcp_port),
+    login_(options.login),
+    password_(options.password),
+    db_name_(options.db_name),
     log_(log4cplus::Logger::getInstance("main")) {
 
     messages_.reserve(max_messages_);

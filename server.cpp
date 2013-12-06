@@ -5,17 +5,20 @@
 #include "server.hpp"
 
 #include <cassert>
+#include <sstream>
 #include <algorithm>
 #include <log4cplus/loggingmacros.h>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "client.hpp"
+#include "settings.hpp"
 #include "backends/base.hpp"
 #include "backends/factory.hpp"
 
 using std::string;
 using std::distance;
 using std::remove_if;
+using std::ostringstream;
 using boost::asio::ip::tcp;
 using boost::system::error_code;
 using boost::posix_time::seconds;
@@ -24,15 +27,16 @@ using boost::posix_time::seconds;
  *
  *
  **/
-communicator::server_t::server_t(const settings_t & settings, create_func_type create_func) :
+communicator::server_t::server_t(const options_t & options, create_func_type create_func) :
     log_(log4cplus::Logger::getInstance("main")),
     interval_(5),
-    num_workers_(settings.num_workers),
+    num_workers_(options.workers),
     create_client_func_(create_func),
     signals_(io_service_),
     acceptor_(io_service_),
     timer_(io_service_, seconds(interval_)),
-    store_backend_(backend::factory::create(settings.store.protocol, settings.store.username, settings.store.password, settings.store.path)) {
+    // store_backend_(backend::factory::create(options.storage.kind, options.storage.login, options.storage.password, options.storage.db_name)) {
+    store_backend_(backend::factory::create(options.storage)) {
 
     LOG4CPLUS_TRACE(log_, "Initializing server");
 
@@ -41,7 +45,9 @@ communicator::server_t::server_t(const settings_t & settings, create_func_type c
 
     bind_signals();
 
-    start_listen(settings.listen.ip_addr, settings.listen.port);
+    ostringstream port_str;
+    port_str << options.listen.tcp_port;
+    start_listen(options.listen.ip_addr, port_str.str());
 
     LOG4CPLUS_TRACE(log_, "Starting timer");
     timer_.async_wait(

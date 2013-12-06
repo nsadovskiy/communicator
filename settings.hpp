@@ -16,6 +16,19 @@ namespace libconfig {
  **/
 namespace communicator {
 
+    struct storage_options_t {
+        std::string kind;
+
+        struct {
+            std::string ip_addr;
+            unsigned tcp_port;
+        } connection;
+
+        std::string db_name;
+        std::string login;
+        std::string password;
+    };
+
     struct options_t {
 
         std::string name;
@@ -23,26 +36,13 @@ namespace communicator {
     	unsigned workers;
 
     	struct {
-    		std::string id_addr;
+    		std::string ip_addr;
     		unsigned tcp_port;
     	} listen;
 
     	libconfig::Setting * settings;
 
-    	struct {
-
-    		std::string kind;
-
-    		struct {
-    			std::string ip_addr;
-    			unsigned tcp_port;
-    		} connection;
-
-    		std::string db_name;
-    		std::string login;
-    		std::string password;
-
-    	} storage;
+    	storage_options_t storage;
     };
 }
 

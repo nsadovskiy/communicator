@@ -17,8 +17,8 @@ using namespace oracle::occi;
  *
  *
  **/
-communicator::backend::oracle_t::oracle_t(const std::string & login, const std::string & password, const std::string & path, bool test_connection/* = true*/) :
-    base_impl_t(login, password, path),
+communicator::backend::oracle_t::oracle_t(const storage_options_t & options, bool test_connection/* = true*/) :
+    base_impl_t(options),
     environment_(Environment::createEnvironment(Environment::DEFAULT), Environment::terminateEnvironment) {
 
     parse_path();
@@ -46,24 +46,24 @@ communicator::backend::oracle_t::~oracle_t() {
  **/
 void communicator::backend::oracle_t::parse_path() {
 
-    boost::cmatch match;
-    boost::regex re("([^/:]+)(:(\\d+))?/(\\w+)");
+    // boost::cmatch match;
+    // boost::regex re("([^/:]+)(:(\\d+))?/(\\w+)");
 
-    if (!boost::regex_match(get_path().c_str(), match, re)) {
-        throw std::invalid_argument("URI string must match '[LOGIN:PASSWORD@]SERVER[:PORT]/SERVICE_NAME' format");
-    }
+    // if (!boost::regex_match(get_path().c_str(), match, re)) {
+    //     throw std::invalid_argument("URI string must match '[LOGIN:PASSWORD@]SERVER[:PORT]/SERVICE_NAME' format");
+    // }
 
-    server_ = match[1];
+    // server_ = match[1];
 
-    port_ = match[3];
-    if (port_.empty()) {
-        port_ = "1521";
-    }
+    // port_ = match[3];
+    // if (port_.empty()) {
+    //     port_ = "1521";
+    // }
 
-    service_name_ = match[4];
+    // service_name_ = match[4];
 
     std::ostringstream strm;
-    strm << "(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=" << server_ << ")(PORT=" << port_ << "))(CONNECT_DATA=(SID=" << service_name_ << ")))";
+    strm << "(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=" << get_ip_addr() << ")(PORT=" << get_tcp_port() << "))(CONNECT_DATA=(SID=" << get_db_name() << ")))";
     connection_string_ = strm.str();
 }
 

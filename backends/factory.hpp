@@ -12,6 +12,9 @@
  *
  **/
 namespace communicator {
+
+    struct storage_options_t;
+
     namespace backend {
 
         class base_impl_t;
@@ -24,7 +27,7 @@ namespace communicator {
          **/
         namespace factory {
 
-            base_impl_pointer_type create(const std::string & protocol, const std::string & login, const std::string & password, const std::string & path);
+            base_impl_pointer_type create(const storage_options_t & options);
         }
     }
 }

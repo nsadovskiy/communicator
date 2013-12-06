@@ -22,21 +22,21 @@ namespace communicator {
          **/
         class oracle_t : public base_impl_t {
         public:
-            oracle_t(const std::string & login, const std::string & password, const std::string & path, bool test_connection = true);
+            oracle_t(const storage_options_t & options, bool test_connection = true);
             virtual ~oracle_t();
 
         public:
 
-            const std::string & get_server() const {
-                return server_;
-            }
+            // const std::string & get_server() const {
+            //     return server_;
+            // }
 
-            const std::string & get_port() const {
-                return port_;
-            }
+            // const std::string & get_port() const {
+            //     return port_;
+            // }
 
             const std::string & get_servicename() const {
-                return service_name_;
+                return get_db_name();
             }
 
         private:

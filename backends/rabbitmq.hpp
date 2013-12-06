@@ -20,7 +20,7 @@ namespace communicator {
          **/
         class rabbitmq_t : public base_impl_t {
         public:
-            rabbitmq_t(const std::string & login, const std::string & password, const std::string & path);
+            rabbitmq_t(const storage_options_t & options);
             virtual ~rabbitmq_t();
 
         private:

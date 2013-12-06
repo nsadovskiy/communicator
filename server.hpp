@@ -32,6 +32,8 @@ namespace communicator {
         class base_impl_t;
     }
 
+    struct options_t;
+
     /**
      *
      *
@@ -67,7 +69,7 @@ namespace communicator {
         typedef boost::lock_guard<boost::mutex> lock_guard_type;
 
     public:
-        server_t(const settings_t & settings, create_func_type create_func);
+        server_t(const options_t & options, create_func_type create_func);
         // server_t(const char * bind_addr, const char * port, size_t num_workers, create_func_type create_func);
         virtual ~server_t();
 
