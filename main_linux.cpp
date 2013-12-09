@@ -74,8 +74,6 @@ int main(int argc, const char * argv[]) {
             LOG4CPLUS_TRACE(logger, "\t[" << option.name << "] Storage password: ********");
         }
 
-        return 0;
-
         omnicomm::transport_protocol_t::init_protocol();
 
         if (daemon_mode) {
